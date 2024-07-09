@@ -1,0 +1,63 @@
+{% from "templates/includes/rfq/rfq_macros.html" import item_name_and_description %}
+
+{% for d in doc.items %}
+<div class="rfq-item">
+	<div class="row">
+		<div class="col-sm-3 col-12" style="margin-bottom: 10px;margin-top: 5px;">
+			{{ item_name_and_description(d, doc) }}
+		</div>
+		<!-- <div class="col-sm-2 col-2" style="margin-bottom: 10px;">
+			<textarea type="text" style="margin-top: 5px;" class="input-with-feedback form-control rfq-offer_detail" ></textarea>
+		</div> -->
+		<div class="col-sm-2 col-4 text-right">
+				<!-- <input type="text" class="form-control text-right rfq-qty" style="margin-top: 5px;display: inline-block"
+				value = "{{ d.get_formatted('qty') }}"
+				data-idx="{{ d.idx }}"> -->
+			<input type="text" class="form-control rfq-brand" style="margin-top: 5px;display: inline-block"
+				data-idx="{{ d.idx }}">
+			<!-- {% set brands = frappe.db.get_all("Brand") %}
+			<div class="frappe-control input-max-width" data-fieldtype="Select" >
+				<div class="control-input flex align-center">
+					<select class="form-control rfq-brand"  data-idx="{{ d.idx }}" style="margin-top: 5px;display: inline-block">
+						<option value="">{{ _("Select Brand") }}</option>
+						{% for brand in brands %}
+							{% if brand.name == d.brand %}
+								<option selected="{{d.brand}}" value="{{ brand.name }}">{{ brand.name }}</option>
+							{% else %}
+								<option value="{{ brand.name }}">{{ brand.name }}</option>
+							{% endif %}
+						{% endfor %}
+					</select>
+					<div class="select-icon mt-1">
+						<svg class="icon icon-sm">
+							<use class="" href="#icon-select"></use>
+						</svg>
+					</div>
+				</div>
+			</div> -->
+		</div>
+		<div class="col-sm-2 col-4 text-right">
+				<input type="text" class="form-control text-right rfq-qty" style="margin-top: 5px;display: inline-block"
+				value = "{{ d.get_formatted('qty') }}"
+				data-idx="{{ d.idx }}">
+				<p class="text-muted small" style="margin-top: 10px;">
+					{{_("UOM") + ":"+ d.uom}}
+				</p>
+		</div>
+		<div class="col-sm-2 col-4 text-right">
+			<input type="text" class="form-control text-right rfq-rate"
+				style="margin-top: 5px;display: inline-block" value="0.00"
+				data-idx="{{ d.idx }}">
+		</div>
+        <div class="col-sm-1 col-4 text-right" >
+           {{doc.currency_symbol}} <span class="rfq-amount" data-idx="{{ d.idx }}">0.00</span>
+        </div>
+		<div class="col-sm-2 col-4 text-right">
+			<input type="date" class="form-control text-right rfq-date"
+				style="margin-top: 5px;display: inline-block"
+				value="{{ doc.transaction_date }}"
+				data-idx="{{ d.idx }}">
+		 </div>
+		</div>
+	</div>
+{% endfor %}
