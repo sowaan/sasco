@@ -1,0 +1,116 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-05-26 14:16:32.297049",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "parent_item",
+  "fg_item_uom",
+  "spl_area_sqm",
+  "selected_spl_area_sqm",
+  "rate",
+  "amount",
+  "column_break_uhov",
+  "cam_item_qty",
+  "selected_cam_item_qty",
+  "child_item_qty",
+  "selected_child_item_qty"
+ ],
+ "fields": [
+  {
+   "fieldname": "parent_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Parent Item",
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fg_item_uom",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "FG Item UOM",
+   "read_only": 1
+  },
+  {
+   "fieldname": "spl_area_sqm",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total SPL Area SQM",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "selected_spl_area_sqm",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Selected SPL Area SQM",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_uhov",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "cam_item_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total CAM Item QTY",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "selected_cam_item_qty",
+   "fieldtype": "Float",
+   "label": "Selected CAM Item QTY",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Total Child Item quantities for single parent item as per Sales Order.",
+   "fieldname": "child_item_qty",
+   "fieldtype": "Float",
+   "label": "Total Child Item Qty",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Selected Child Item quantities for single parent item as per Delivery Note.",
+   "fieldname": "selected_child_item_qty",
+   "fieldtype": "Float",
+   "label": "Selected Child Item Qty",
+   "no_copy": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Float",
+   "label": "Rate"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "label": "Amount",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-08-09 12:43:36.507696",
+ "modified_by": "Administrator",
+ "module": "Sasco",
+ "name": "Fabrication Parent Item",
+ "owner": "sufyan.sadiq@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

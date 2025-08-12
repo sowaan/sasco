@@ -9,15 +9,9 @@ app_license = "mit"
 fixtures = [
     {
         "doctype": "Custom Field",
-        "filters": [
-            [
-                "module",
-                "in",
-                (
-                    "Sasco"
-                )
-            ]
-        ]
+        "filters": {
+            "module": "Sasco"
+        }
     },
 ]
 
@@ -44,6 +38,11 @@ fixtures = [
 
 # include js in doctype views
 # doctype_js = {"doctype" : "public/js/doctype.js"}
+
+doctype_js = {
+    "Quotation" : "public/js/quotation.js"
+}
+
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -144,6 +143,13 @@ fixtures = [
 # 		"on_trash": "method"
 # 	}
 # }
+
+doc_events = {
+    "Quotation": {
+        "before_save": "sasco.events.quotation.before_save",
+	}
+}
+
 
 # Scheduled Tasks
 # ---------------
