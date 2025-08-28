@@ -1,6 +1,6 @@
 frappe.ui.form.on('Quotation', {
     refresh(frm) {
-        console.log("Quotation form refreshed");
+      //  console.log("✅Quotation form refreshed");
         update_currency_labels(frm);
     },
     currency(frm) {
@@ -8,58 +8,38 @@ frappe.ui.form.on('Quotation', {
     }
 });
 
-// frappe.ui.form.on('Fabrication Parent Item', {
-//     spl_area_sqm(frm, cdt, cdn) {
-//         calculate_fabrication_totals(frm);
-//     },
-//     parent_item(frm, cdt, cdn) {
-//         frappe.call({
-//             method: "frappe.client.get_value",
-//             args: {
-//                 doctype: "Item Price",
-//                 filters: {
-//                     item_code: locals[cdt][cdn].parent_item,
-//                     price_list: frm.doc.price_list
-//                 },
-//                 fieldname: "price_list_rate"
-//             },
-//             callback: function(r) {
-//                 if (r.message) {
-//                     frappe.model.set_value(cdt, cdn, "rate", r.message.price_list_rate);
-//                     const row = locals[cdt][cdn];
-//                     frappe.model.set_value(cdt, cdn, "amount", row.spl_area_sqm * r.message.price_list_rate);
-//                     calculate_fabrication_totals(frm);
-//                 }
-//             }
-//         });
-//     }
-// });
+frappe.ui.form.on('Fabrication Parent Item', {
+    price_list: function (frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
 
-// function calculate_fabrication_totals(frm) {
-//     let total_qty = 0;
-//     let total_amount = 0;
+        if (!row.parent_item || !row.price_list) {
+            frappe.msgprint("Please select both Parent Item and Price List.");
+            return;
+        }
 
-//     frm.doc.fabrication_parent_item.forEach(row => {
-//         total_qty += flt(row.qty);
-//         total_amount += flt(row.amount);
-//     });
+       // console.log("🔔 Price List changed:", row.price_list, "for Parent Item:", row.parent_item);
 
-//     frm.set_value('custom_parent_total_qty', total_qty);
-//     frm.set_value('custom_parent_total', total_amount);
+        // Call server-side method to fetch rate
+        frappe.call({
+            method: "frappe.client.get_value",
+            args: {
+                doctype: "Item Price",
+                filters: {
+                    item_code: row.parent_item,
+                    price_list: row.price_list,
+                    uom: row.fg_item_uom || undefined
+                },
+                fieldname: ["price_list_rate"]
+            },
+            callback: function (r) {
+                let new_rate = (r.message && r.message.price_list_rate) ? r.message.price_list_rate : 0;
 
-//     let total_item_qty = frm.doc.total_qty || frm.doc.items.reduce((sum, item) => sum + flt(item.qty), 0);
-
-//     if (total_item_qty && total_amount) {
-//         frm.doc.items.forEach(item => {
-//             if (item.qty) {
-//                 let amt = (flt(item.qty) / total_item_qty) * total_amount;
-//                 item.rate = amt / flt(item.qty);
-//                 item.amount = amt;
-//             }
-//         });
-//         frm.refresh_field('items');
-//     }
-// }
+                frappe.model.set_value(cdt, cdn, "rate", new_rate);
+               // console.log("💰 Rate updated:", new_rate);
+            }
+        });
+    }
+});
 
 
 function update_currency_labels(frm) {

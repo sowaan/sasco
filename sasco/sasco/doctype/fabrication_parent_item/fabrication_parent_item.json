@@ -8,6 +8,7 @@
  "field_order": [
   "parent_item",
   "fg_item_uom",
+  "price_list",
   "spl_area_sqm",
   "selected_spl_area_sqm",
   "rate",
@@ -104,14 +105,23 @@
    "fieldtype": "Float",
    "in_list_view": 1,
    "label": "Total KG",
-   "precision": "0"
+   "precision": "0",
+   "read_only": 1
+  },
+  {
+   "fieldname": "price_list",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Price List",
+   "options": "Price List",
+   "reqd": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-08-26 14:02:09.144871",
+ "modified": "2025-08-27 15:35:31.183734",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Fabrication Parent Item",
