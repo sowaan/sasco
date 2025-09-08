@@ -110,7 +110,7 @@ def create_quotation_from_fabrication(fabrication_name):
 
     # --- Default Cost Center ---
     default_cost_center = frappe.db.get_value(
-        "Company", {"company_name": "SASCO Industries"}, "cost_center"
+        "Company", {"company_name": fabrication.company}, "cost_center"
     )
     quotation.custom_cost_center = default_cost_center
 
@@ -122,7 +122,7 @@ def create_quotation_from_fabrication(fabrication_name):
     return quotation.name
 
 
-def _add_item_to_quotation(quotation, item_code, qty, uom=None, extra_fields=None):
+def _add_item_to_quotation(quotation, item_code,  qty, uom=None, extra_fields=None):
     """Helper to add one Quotation Item with ERPNext defaults + custom fields."""
 
     # Prepare args for ERPNext utility
@@ -134,7 +134,7 @@ def _add_item_to_quotation(quotation, item_code, qty, uom=None, extra_fields=Non
         "qty": qty,
         "uom": uom,
         "currency": frappe.defaults.get_global_default("currency"),
-        "price_list": frappe.defaults.get_global_default("selling_price_list"),
+        "price_list": frappe.defaults.get_global_default("buying_price_list"),
         "plc_conversion_rate": 1,
         "conversion_rate": 1,
         "project": quotation.project,
@@ -150,11 +150,16 @@ def _add_item_to_quotation(quotation, item_code, qty, uom=None, extra_fields=Non
     row.item_code = item_code
     row.qty = qty
     row.uom = details.get("uom") or uom
-    row.rate = details.get("price_list_rate", 0)
+    row.rate = details.get("rate")
+    
     row.stock_uom = details.get("stock_uom")
     row.item_name = details.get("item_name")
     row.description = details.get("description")
-
+    row.conversion_rate = 1
+    row.plc_conversion_rate = 1
+    row.price_list_rate = details.get("price_list_rate")
+    
+    #print(f"\n\nrow before for: {row.rate} - {row.base_rate}\n\n")
     # Copy useful stock fields
     for field in ["conversion_factor", "stock_qty", "actual_qty", "projected_qty", "min_order_qty"]:
         if details.get(field) is not None:
@@ -164,5 +169,5 @@ def _add_item_to_quotation(quotation, item_code, qty, uom=None, extra_fields=Non
     if extra_fields:
         for k, v in extra_fields.items():
             row.set(k, v)
-
+    #print(f"\n\nrow after for: {row.rate} - {row.base_rate}\n\n")
     return row

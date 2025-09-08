@@ -15,8 +15,11 @@ def before_save(doc, method):
         if not row.parent_item:
             continue
 
+        if not row.price_list:
+            row.price_list = doc.selling_price_list
+
         ctx = {
-            "price_list": doc.selling_price_list,
+            "price_list": row.price_list,   # use the row's value (whether set already or just updated)
             "customer": doc.customer,
             "uom": row.fg_item_uom,
             "transaction_date": doc.transaction_date,

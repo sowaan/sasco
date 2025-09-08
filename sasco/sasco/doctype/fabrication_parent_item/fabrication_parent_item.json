@@ -113,15 +113,14 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Price List",
-   "options": "Price List",
-   "reqd": 1
+   "options": "Price List"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-08-27 15:35:31.183734",
+ "modified": "2025-09-05 16:03:30.766144",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Fabrication Parent Item",
