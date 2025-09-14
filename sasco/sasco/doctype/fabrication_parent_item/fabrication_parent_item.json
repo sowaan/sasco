@@ -9,8 +9,9 @@
   "parent_item",
   "fg_item_uom",
   "price_list",
+  "quantity",
   "spl_area_sqm",
-  "selected_spl_area_sqm",
+  "total_kg",
   "rate",
   "amount",
   "column_break_uhov",
@@ -18,7 +19,7 @@
   "selected_cam_item_qty",
   "child_item_qty",
   "selected_child_item_qty",
-  "total_kg"
+  "selected_spl_area_sqm"
  ],
  "fields": [
   {
@@ -39,7 +40,6 @@
   {
    "fieldname": "spl_area_sqm",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Total SPL Area SQM",
    "read_only": 1
   },
@@ -92,18 +92,20 @@
   {
    "fieldname": "rate",
    "fieldtype": "Float",
-   "label": "Rate"
+   "in_list_view": 1,
+   "label": "Rate",
+   "read_only": 1
   },
   {
    "fieldname": "amount",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Amount",
    "read_only": 1
   },
   {
    "fieldname": "total_kg",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Total KG",
    "precision": "0",
    "read_only": 1
@@ -114,13 +116,24 @@
    "in_list_view": 1,
    "label": "Price List",
    "options": "Price List"
+  },
+  {
+   "default": "0",
+   "fieldname": "quantity",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "in_preview": 1,
+   "label": "Quantity",
+   "non_negative": 1,
+   "precision": "2",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-09-05 16:03:30.766144",
+ "modified": "2025-09-14 17:24:25.978305",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Fabrication Parent Item",

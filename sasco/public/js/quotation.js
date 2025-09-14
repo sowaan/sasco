@@ -50,7 +50,96 @@ frappe.ui.form.on('Fabrication Parent Item', {
                // console.log("💰 Rate updated:", new_rate);
             }
         });
-    }
+    },
+    uom_type: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+
+        if (row.uom_type === "SQM") {
+            // set quantity = spl_area_sqm
+            frappe.model.set_value(cdt, cdn, "quantity", row.spl_area_sqm || 0);
+
+            // hide KG, show SQM
+            frm.fields_dict["custom_parent_item"].grid.toggle_display("spl_area_sqm", true);
+            frm.fields_dict["custom_parent_item"].grid.toggle_display("total_kg", false);
+
+        } else if (row.uom_type === "KG") {
+            // set quantity = total_kg
+            frappe.model.set_value(cdt, cdn, "quantity", row.total_kg || 0);
+
+            // hide SQM, show KG
+            frm.fields_dict["custom_parent_item"].grid.toggle_display("spl_area_sqm", false);
+            frm.fields_dict["custom_parent_item"].grid.toggle_display("total_kg", true);
+        }
+
+        // calculate amount based on unified quantity
+        let amount = (row.quantity || 0) * (row.rate || 0);
+        frappe.model.set_value(cdt, cdn, "amount", amount);
+    },
+
+    // recalc if quantity or rate changes
+    quantity: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        let amount = (row.quantity || 0) * (row.rate || 0);
+        frappe.model.set_value(cdt, cdn, "amount", amount);
+    },
+    rate: function(frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        let amount = (row.quantity || 0) * (row.rate || 0);
+        frappe.model.set_value(cdt, cdn, "amount", amount);
+    }    
+    // uom_type: function(frm, cdt, cdn) {
+    //     let row = locals[cdt][cdn];
+
+    //     if (row.uom_type === "SQM") {
+    //         frappe.model.set_value(cdt, cdn, "spl_area_sqm", row.spl_area_sqm || 0);
+    //         frappe.model.set_value(cdt, cdn, "total_kg", 0);
+
+    //         // show/hide fields dynamically
+    //         frm.fields_dict["custom_parent_item"].grid.toggle_display("spl_area_sqm", true);
+    //         frm.fields_dict["custom_parent_item"].grid.toggle_display("total_kg", false);
+
+    //         // calculate amount
+    //         let amount = (row.spl_area_sqm || 0) * (row.rate || 0);
+    //         frappe.model.set_value(cdt, cdn, "amount", amount);
+
+    //     } else if (row.uom_type === "KG") {
+    //         frappe.model.set_value(cdt, cdn, "total_kg", row.total_kg || 0);
+    //         frappe.model.set_value(cdt, cdn, "spl_area_sqm", 0);
+
+    //         frm.fields_dict["custom_parent_item"].grid.toggle_display("spl_area_sqm", false);
+    //         frm.fields_dict["custom_parent_item"].grid.toggle_display("total_kg", true);
+
+    //         let amount = (row.total_kg || 0) * (row.rate || 0);
+    //         frappe.model.set_value(cdt, cdn, "amount", amount);
+    //     }
+    // },
+
+    // spl_area_sqm: function(frm, cdt, cdn) {
+    //     let row = locals[cdt][cdn];
+    //     if (row.uom_type === "SQM") {
+    //         let amount = (row.spl_area_sqm || 0) * (row.rate || 0);
+    //         frappe.model.set_value(cdt, cdn, "amount", amount);
+    //     }
+    // },
+
+    // total_kg: function(frm, cdt, cdn) {
+    //     let row = locals[cdt][cdn];
+    //     if (row.uom_type === "KG") {
+    //         let amount = (row.total_kg || 0) * (row.rate || 0);
+    //         frappe.model.set_value(cdt, cdn, "amount", amount);
+    //     }
+    // },
+
+    // rate: function(frm, cdt, cdn) {
+    //     let row = locals[cdt][cdn];
+    //     if (row.uom_type === "SQM") {
+    //         let amount = (row.spl_area_sqm || 0) * (row.rate || 0);
+    //         frappe.model.set_value(cdt, cdn, "amount", amount);
+    //     } else if (row.uom_type === "KG") {
+    //         let amount = (row.total_kg || 0) * (row.rate || 0);
+    //         frappe.model.set_value(cdt, cdn, "amount", amount);
+    //     }
+    // }
 });
 
 
