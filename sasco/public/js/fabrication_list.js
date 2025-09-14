@@ -1,3 +1,8 @@
+//The scripts are not working as expected. Please fix the issues and make sure the code is functional.
+//The code is not called even when we add in hooks.py doctype_js = {"Sales Inquiry": "public/js/sales_inquiry.js"}
+//For now I've included the code in client script on website. Please fix the issues in this file and remove from client script.
+
+
 frappe.ui.form.on('Fabrication List', {
     refresh(frm) {
         if (frm.doc.docstatus === 1) {
