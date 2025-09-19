@@ -23,19 +23,20 @@
  ],
  "fields": [
   {
+   "columns": 2,
    "fieldname": "parent_item",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Parent Item",
-   "options": "Item",
-   "read_only": 1
+   "options": "Item"
   },
   {
+   "columns": 2,
    "fieldname": "fg_item_uom",
-   "fieldtype": "Data",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "label": "FG Item UOM",
-   "read_only": 1
+   "options": "UOM"
   },
   {
    "fieldname": "spl_area_sqm",
@@ -90,6 +91,7 @@
    "read_only": 1
   },
   {
+   "columns": 1,
    "fieldname": "rate",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -97,6 +99,7 @@
    "read_only": 1
   },
   {
+   "columns": 2,
    "fieldname": "amount",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -111,6 +114,7 @@
    "read_only": 1
   },
   {
+   "columns": 2,
    "fieldname": "price_list",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -118,22 +122,20 @@
    "options": "Price List"
   },
   {
+   "columns": 1,
    "default": "0",
    "fieldname": "quantity",
    "fieldtype": "Float",
    "in_list_view": 1,
    "in_preview": 1,
-   "label": "Quantity",
-   "non_negative": 1,
-   "precision": "2",
-   "read_only": 1
+   "label": "Quantity"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-09-14 17:24:25.978305",
+ "modified": "2025-09-17 12:05:27.478570",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Fabrication Parent Item",

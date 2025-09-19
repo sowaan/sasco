@@ -2,18 +2,18 @@ frappe.ui.form.on('Quotation', {
     refresh(frm) {
       //  console.log("✅Quotation form refreshed");
         update_currency_labels(frm);
-        let grid = frm.fields_dict["custom_parent_item"].grid;
+        // let grid = frm.fields_dict["custom_parent_item"].grid;
 
-        // Prevent adding new rows
-        grid.cannot_add_rows = true;
-        grid.wrapper.find('.grid-add-row').hide(); // hide "Add Row" button
-        grid.wrapper.find('.grid-footer').hide();  // hide footer entirely (including multi-select delete)
+        // // Prevent adding new rows
+        // grid.cannot_add_rows = true;
+        // grid.wrapper.find('.grid-add-row').hide(); // hide "Add Row" button
+        // grid.wrapper.find('.grid-footer').hide();  // hide footer entirely (including multi-select delete)
 
-        // Prevent deleting rows
-        grid.wrapper.find('.grid-remove-rows').hide(); // hide "Delete" in footer
-        grid.wrapper.find('.grid-remove-row').hide();  // hide "trash" icon in each row
+        // // Prevent deleting rows
+        // grid.wrapper.find('.grid-remove-rows').hide(); // hide "Delete" in footer
+        // grid.wrapper.find('.grid-remove-row').hide();  // hide "trash" icon in each row
 
-        grid.wrapper.find('.grid-delete-row').hide();
+        // grid.wrapper.find('.grid-delete-row').hide();
     },
     currency(frm) {
         update_currency_labels(frm);

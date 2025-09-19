@@ -35,9 +35,9 @@ def before_save(doc, method):
         else:
             row.rate = 0
 
-        row.amount = flt(row.spl_area_sqm) * flt(row.rate)
+        row.amount = flt(row.quantity) * flt(row.rate)
 
-        total_qty += flt(row.spl_area_sqm)
+        total_qty += flt(row.quantity)
         total_amount += flt(row.amount)
 
     doc.custom_parent_total_qty = total_qty

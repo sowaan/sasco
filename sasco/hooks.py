@@ -146,8 +146,11 @@ doctype_js = {
 
 doc_events = {
     "Quotation": {
-        "before_save": "sasco.events.quotation.before_save",
-	}
+        "before_save": "sasco.events.quotation.before_save"
+	},
+    "Sales Inquiry": {
+        "before_save": "sasco.events.sales_inquiry.before_save"
+    }
 }
 
 

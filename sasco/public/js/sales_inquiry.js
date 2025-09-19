@@ -89,8 +89,11 @@ function toggle_child_tables(frm) {
         "Plenum": "plenum_specification_table"
     };
 
+    console.log("Product Types:", product_types);
+
     // loop through mapping and show/hide child tables
     for (let [ptype, fieldname] of Object.entries(mapping)) {
+        console.log(`Toggling ${fieldname} for product type ${ptype}`);
         if (product_types.includes(ptype)) {
             frm.toggle_display(fieldname, true);
         } else {
