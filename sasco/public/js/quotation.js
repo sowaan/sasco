@@ -2,21 +2,102 @@ frappe.ui.form.on('Quotation', {
     refresh(frm) {
       //  console.log("✅Quotation form refreshed");
         update_currency_labels(frm);
-        // let grid = frm.fields_dict["custom_parent_item"].grid;
-
-        // // Prevent adding new rows
-        // grid.cannot_add_rows = true;
-        // grid.wrapper.find('.grid-add-row').hide(); // hide "Add Row" button
-        // grid.wrapper.find('.grid-footer').hide();  // hide footer entirely (including multi-select delete)
-
-        // // Prevent deleting rows
-        // grid.wrapper.find('.grid-remove-rows').hide(); // hide "Delete" in footer
-        // grid.wrapper.find('.grid-remove-row').hide();  // hide "trash" icon in each row
-
-        // grid.wrapper.find('.grid-delete-row').hide();
+        frm.fields_dict["items"].grid.get_field("custom_price_list").get_query = function(doc, cdt, cdn) {
+            return {
+                filters: {
+                    selling: 1   // ✅ Only Selling Price Lists
+                }
+            };
+        };
+        toggle_price_list_field(frm);
     },
+    custom_allow_items_price_list: function(frm) {
+        // When the checkbox is toggled
+        toggle_price_list_field(frm);
+    },
+	custom_quotation_template(frm) {
+	    if (frm.doc.custom_quotation_template) {
+		    frappe.call({
+                method: "frappe.client.get",
+                args: {
+                    doctype: "Quotation Template",
+                    name: frm.doc.custom_quotation_template,
+                },
+                callback(r) {
+                    if(r.message) {
+                        var ftr = r.message.quotation_items;
+                        frm.set_value("items", []);
+                        for (var i = 0; i < ftr.length; i++) {
+                            var ele = ftr[i];
+                            var row = frappe.model.add_child(
+                              frm.doc,
+                              "Quotation Item",
+                              "items"
+                            );
+                            row.item_code = ele.item;
+                            row.item_name = ele.item_name;
+                            row.description = ele.item_name;
+                            row.uom = ele.uom;
+                            row.qty = ele.quantity;
+                            row.custom_stiffener_total_qty = ele.stiffener_total_qty;
+                            row.custom_fixing_1st_side = ele.fixing_1st_side;
+                            row.custom_fixing_2nd_side = ele.fixing_2nd_side;
+                            row.custom_vanes_nos = ele.vanes_nos;
+                            row.custom_stiffener_total_qty = ele.stiffener_total_qty;
+                            row.custom_kg = ele.kg;
+                            row.custom_area_in_sqm = ele.area_in_sqm;
+                            row.custom_lm = ele.lm;
+                            
+                            // Set custom price list if allowed
+                            row.custom_price_list = frm.doc.selling_price_list;
+                        }
+                        refresh_field("items");
+                    }
+                }
+            });
+	    }
+	},    
     currency(frm) {
         update_currency_labels(frm);
+    }
+});
+
+function toggle_price_list_field(frm) {
+
+}
+frappe.ui.form.on('Quotation Item', {
+    custom_price_list: function(frm, cdt, cdn) {
+        if (!frm.doc.custom_allow_items_price_list)
+        {
+            return;
+        }
+        
+        let row = locals[cdt][cdn];
+
+        if (!row.item_code || !row.custom_price_list) {
+            frappe.msgprint("Please select both Item and Price List.");
+            return;
+        }
+
+        // Call server-side method to fetch rate
+        frappe.call({
+            method: "frappe.client.get_value",
+            args: {
+                doctype: "Item Price",
+                filters: {
+                    item_code: row.item_code,
+                    price_list: row.custom_price_list,
+                    uom: row.uom || undefined
+                },
+                fieldname: ["price_list_rate"]
+            },
+            callback: function (r) {
+                let new_rate = (r.message && r.message.price_list_rate) ? r.message.price_list_rate : 0;
+
+                frappe.model.set_value(cdt, cdn, "price_list_rate", new_rate);
+               // console.log("💰 Rate updated:", new_rate);
+            }
+        });
     }
 });
 
