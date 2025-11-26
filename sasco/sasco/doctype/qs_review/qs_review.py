@@ -46,6 +46,8 @@ def get_fabrication_items(sales_order, item_code, parenttype):
     if not est_req:
         return 0  # No estimation request, so qty = 0
 
+    parentname = None
+
     # Step 2: Find Fabrication List linked to the Estimation Request
     fab_list = frappe.db.get_value(
         "Fabrication List",
@@ -57,6 +59,20 @@ def get_fabrication_items(sales_order, item_code, parenttype):
     if not fab_list:
         return 0  # No fabrication list, so qty = 0
 
+    parentname = fab_list
+
+    #if parenttype is Manufacture Order, find the MO linked to the Fabrication List
+    if parenttype == "Manufacture Order":
+        mo_name = frappe.db.get_value(
+            "Manufacture Order",
+            {"fabrication_list": fab_list,
+            "docstatus": 1},
+            "name"
+        )         
+        if not mo_name:
+            return 0  # No manufacture order, so qty = 0
+        parentname = mo_name
+
     # Step 3: Return total qty of the item in duct_and_acc_item table
     total_qty = frappe.db.sql("""
         SELECT 
@@ -65,7 +81,7 @@ def get_fabrication_items(sales_order, item_code, parenttype):
         WHERE parent = %s
           AND item_code = %s
                               AND parenttype = %s
-    """, (fab_list, item_code, parenttype), as_dict=True)
+    """, (parentname, item_code, parenttype), as_dict=True)
 
     # Extract number safely
     qty = total_qty[0].get("total_qty") or 0
