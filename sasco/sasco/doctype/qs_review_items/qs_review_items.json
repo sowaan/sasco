@@ -1,0 +1,107 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-11-25 15:10:19.707941",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "item_code",
+  "item_name",
+  "uom",
+  "rate",
+  "sod_qty",
+  "utilized_from_sod",
+  "spl_qty",
+  "sod_balance_qty",
+  "sod_balance_amount"
+ ],
+ "fields": [
+  {
+   "columns": 1,
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Item Code",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "item_name",
+   "fieldtype": "Read Only",
+   "in_list_view": 1,
+   "label": "Item Name"
+  },
+  {
+   "columns": 1,
+   "fieldname": "uom",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "UOM",
+   "options": "UOM"
+  },
+  {
+   "columns": 1,
+   "fieldname": "rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Rate"
+  },
+  {
+   "columns": 1,
+   "fieldname": "utilized_from_sod",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Utilized From SOD",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "spl_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "SPL Qty",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_balance_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "SOD Balance Qty",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_balance_amount",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "SOD Balance Amount",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "SOD Qty",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-11-25 17:42:52.986252",
+ "modified_by": "Administrator",
+ "module": "Sasco",
+ "name": "QS Review Items",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
