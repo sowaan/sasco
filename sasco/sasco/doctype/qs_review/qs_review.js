@@ -23,7 +23,7 @@ frappe.ui.form.on("QS Review", {
                 // Add each row to child table
                 items.forEach(row => {
                     const child = frm.add_child("detail_table");
-                     console.log("current row is----", row);
+                    //  console.log("current row is----", row);
                     // --- Safe defaults ---
                     const sod_quantity = row.quantity_sum || 0;  
                     const sod_qty = row.qty || 0;                        // SO qty
