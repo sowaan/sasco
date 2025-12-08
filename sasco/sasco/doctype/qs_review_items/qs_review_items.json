@@ -10,11 +10,23 @@
   "item_name",
   "uom",
   "rate",
+  "quantity",
+  "utilized",
+  "spl",
+  "balance",
+  "sod_balance_amount",
+  "sod_qty_sqm",
+  "utilized_from_sod_sqm",
+  "spl_qty_sqm",
+  "sod_balance_qty_sqm",
   "sod_qty",
   "utilized_from_sod",
   "spl_qty",
   "sod_balance_qty",
-  "sod_balance_amount"
+  "sod_qty_kg",
+  "utilized_from_sod_kg",
+  "spl_qty_kg",
+  "sod_balance_qty_kg"
  ],
  "fields": [
   {
@@ -52,24 +64,21 @@
    "columns": 1,
    "fieldname": "utilized_from_sod",
    "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "Utilized From SOD",
+   "label": "Utilized From SOD (Nos)",
    "read_only": 1
   },
   {
    "columns": 1,
    "fieldname": "spl_qty",
    "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "SPL Qty",
+   "label": "SPL Qty (Nos)",
    "read_only": 1
   },
   {
    "columns": 1,
    "fieldname": "sod_balance_qty",
    "fieldtype": "Float",
-   "in_list_view": 1,
-   "label": "SOD Balance Qty",
+   "label": "SOD Balance Qty (Nos)",
    "read_only": 1
   },
   {
@@ -84,8 +93,95 @@
    "columns": 1,
    "fieldname": "sod_qty",
    "fieldtype": "Float",
+   "label": "SOD Qty (Nos)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_qty_sqm",
+   "fieldtype": "Float",
+   "label": "SOD Qty (sqm)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "utilized_from_sod_sqm",
+   "fieldtype": "Float",
+   "label": "Utilized From SOD (sqm)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "spl_qty_sqm",
+   "fieldtype": "Float",
+   "label": "SPL Qty (sqm)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_balance_qty_sqm",
+   "fieldtype": "Float",
+   "label": "SOD Balance Qty (sqm)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_qty_kg",
+   "fieldtype": "Float",
+   "label": "SOD Qty (kg)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "utilized_from_sod_kg",
+   "fieldtype": "Float",
+   "label": "Utilized From SOD (kg)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "spl_qty_kg",
+   "fieldtype": "Float",
+   "label": "SPL Qty (kg)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sod_balance_qty_kg",
+   "fieldtype": "Float",
+   "label": "SOD Balance Qty (kg)",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "quantity",
+   "fieldtype": "Float",
    "in_list_view": 1,
    "label": "SOD Qty",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "utilized",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Utilized From SOD",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "spl",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "SPL Qty",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "balance",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "SOD Balance Qty",
    "read_only": 1
   }
  ],
@@ -93,7 +189,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-11-25 17:42:52.986252",
+ "modified": "2025-12-07 17:46:40.950766",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "QS Review Items",
