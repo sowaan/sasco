@@ -12,15 +12,18 @@
   "party_type",
   "column_break_wwfw",
   "amount",
+  "tax_amount",
   "description",
   "party",
   "accounting_section_section",
   "sanctioned_amount",
-  "gl_account",
-  "remarks"
+  "remarks",
+  "column_break_cfgc",
+  "gl_account"
  ],
  "fields": [
   {
+   "default": "Today",
    "fieldname": "date",
    "fieldtype": "Date",
    "in_list_view": 1,
@@ -91,13 +94,24 @@
    "fieldtype": "Dynamic Link",
    "label": "Party",
    "options": "party_type"
+  },
+  {
+   "fieldname": "column_break_cfgc",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "tax_amount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Tax Amount",
+   "non_negative": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-08 10:14:37.968184",
+ "modified": "2025-12-09 13:59:24.844135",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Petty Expenses",
