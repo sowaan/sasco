@@ -124,6 +124,33 @@ function set_child_table_queries(frm) {
         };
     };
 
+    // ---- cost center (child) ----
+    frm.fields_dict["detail_table"].grid.get_field("cost_center").get_query = function(doc, cdt, cdn) {
+        if (!doc.company) {
+            return {};
+        }
+        // Assuming Expense Claim Type has a 'company' field
+        return {
+            filters: {
+                "company": doc.company,
+                "is_group": 0
+            }
+        };
+    };
+    // ---- project (child) ----
+    frm.fields_dict["detail_table"].grid.get_field("project").get_query = function(doc, cdt, cdn) {
+        if (!doc.company) {
+            return {};
+        }
+        // Assuming Expense Claim Type has a 'company' field
+        return {
+            filters: {
+                "company": doc.company
+            }
+        };
+    };    
+
+
     // ---- party (child) ----
     frm.fields_dict["detail_table"].grid.get_field("party").get_query = function(doc, cdt, cdn) {
         const row = locals[cdt][cdn];

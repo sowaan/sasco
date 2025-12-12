@@ -86,6 +86,10 @@ def validate_detail_rows(doc):
 import frappe
 from frappe.utils import flt
 
+import frappe
+from frappe.utils import flt
+
+
 @frappe.whitelist()
 def make_journal_entry(docname):
 	doc = frappe.get_doc("Petty Cash Expense Recording", docname)
@@ -104,6 +108,13 @@ def make_journal_entry(docname):
 		return doc.journal_entry
 
 	credit_account = doc.payment_account
+
+	# Inspect Journal Entry Account meta to avoid assigning fields that might not exist
+	je_account_meta = frappe.get_meta("Journal Entry Account")
+	has_cost_center_field = je_account_meta.has_field("cost_center")
+	has_project_field = je_account_meta.has_field("project")
+	has_asset_field = je_account_meta.has_field("asset")
+	has_vehicle_field = je_account_meta.has_field("vehicle")
 
 	je = frappe.new_doc("Journal Entry")
 	je.voucher_type = "Journal Entry"      # or Bank Entry / Cash Entry
@@ -140,6 +151,22 @@ def make_journal_entry(docname):
 				f"Row {row.idx}: {tax_amt:.2f} ({row.expense_type or 'N/A'})"
 			)
 
+		# --- Safely assign accounting dimension fields only when:
+		#     1) the field exists on Journal Entry Account, and
+		#     2) the row actually has a value for it ---
+		if has_cost_center_field and getattr(row, "cost_center", None):
+			line.cost_center = row.cost_center
+
+		if has_project_field and getattr(row, "project", None):
+			line.project = row.project
+
+		# asset & vehicle may be removed by the user; only set when the field exists
+		if has_asset_field and getattr(row, "asset", None):
+			line.asset = row.asset
+
+		if has_vehicle_field and getattr(row, "vehicle", None):
+			line.vehicle = row.vehicle
+
 	if total_debit <= 0 and total_tax <= 0:
 		frappe.throw("Total sanctioned amount and tax must be greater than zero to create Journal Entry.")
 
@@ -151,13 +178,19 @@ def make_journal_entry(docname):
 		tax_line = je.append("accounts", {})
 		tax_line.account = doc.tax_account
 		tax_line.debit_in_account_currency = total_tax
-		tax_line.user_remark = "Tax on petty expenses"
 
+		# Keep your existing user_remark behavior but include detailed rows if present
 		if tax_rows_info:
-			# Line break before entries + join each entry on its own line
 			tax_line.user_remark = "Tax on petty expenses:\n" + "\n".join(tax_rows_info)
 		else:
 			tax_line.user_remark = "Tax on petty expenses"
+
+		# Optionally mirror permanent dims (cost_center/project) onto the tax line
+		# (only if those fields exist on JE Account and are present on the parent doc)
+		# if has_cost_center_field and getattr(doc, "cost_center", None):
+		# 	tax_line.cost_center = doc.cost_center
+		# if has_project_field and getattr(doc, "project", None):
+		# 	tax_line.project = doc.project
 
 	# ---- Single credit line from Payment Account ----
 	total_credit = total_debit + total_tax
@@ -167,14 +200,22 @@ def make_journal_entry(docname):
 	credit_line.credit_in_account_currency = total_credit
 	credit_line.user_remark = f"Credit from Payment Account {credit_account}"
 
-	je.insert()
-	je.submit()
+	# Mirror permanent dims onto the credit line if the fields exist on JE Account and values exist on parent
+	# if has_cost_center_field and getattr(doc, "cost_center", None):
+	# 	credit_line.cost_center = doc.cost_center
+	# if has_project_field and getattr(doc, "project", None):
+	# 	credit_line.project = doc.project
 
-	# Link back to petty cash doc
+	je.insert()
+	# je.submit()
+
+	# Link back to petty cash doc (only if that field exists on the parent doctype)
 	if "journal_entry" in [df.fieldname for df in doc.meta.fields]:
 		doc.db_set("journal_entry", je.name)
 
 	return je.name
+
+
 
 
 @frappe.whitelist()
