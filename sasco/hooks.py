@@ -21,7 +21,7 @@ fixtures = [
 # include js, css files in header of desk.html
 # app_include_css = "/assets/sasco/css/sasco.css"
 # app_include_js = "/assets/sasco/js/sasco.js"
-
+# app_include_js = "/assets/sasco/js/manufacture_order.js"
 # include js, css files in header of web template
 # web_include_css = "/assets/sasco/css/sasco.css"
 # web_include_js = "/assets/sasco/js/sasco.js"
