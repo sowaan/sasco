@@ -1,7 +1,7 @@
 frappe.ui.form.on('Manufacture Order', {
     fabrication_process: async function (frm) {
         const proc_name = frm.doc.fabrication_process;
-
+        // console.log('Selected Manufacturing Process:', proc_name);
         // If nothing selected → do nothing except leave grid as-is
         if (!proc_name) return;
 
@@ -17,15 +17,30 @@ frappe.ui.form.on('Manufacture Order', {
                     // CLEAR only when we are sure we want to load
                     frm.clear_table('job_card');
 
-                    proc.detail_table.forEach(row => {
-                        if (!row.operation) return;
+                    for (const row of proc.detail_table) {
+                        if (!row.operation) continue;
 
+                        // add child row
                         const new_row = frm.add_child('job_card');
-                        new_row.operation = row.operation;
-                        new_row.operation_name = row.operation_name;
-                        new_row.workstation = row.mahine_name;
-                        new_row.status = 'Hold';
-                    });
+
+                        // use frappe.model.set_value so fetch_from on 'operation' fires
+                        // Note: new_row.doctype and new_row.name are available
+                        frappe.model.set_value(new_row.doctype, new_row.name, 'operation', row.operation);
+
+                        // Give the fetch a moment to populate fetch_from fields.
+                        // If you prefer not to wait, you can omit this — but for reliability
+                        // when immediately reading the fetched fields, a tiny delay helps.
+                        await new Promise(resolve => setTimeout(resolve, 80));
+
+                        // Now set fields that are not fetched-from (or override if needed)
+                        // e.g. status / per_hour_rate
+                        frappe.model.set_value(new_row.doctype, new_row.name, 'status', 'Hold');
+         
+                        // If you want to explicitly read fetched values (operation_name/workstation)
+                        // you can access locals:
+                        // const latest = locals[new_row.doctype][new_row.name];
+                        // console.log('fetched operation_name:', latest.operation_name);
+                    }
 
                     frm.refresh_field('job_card');
                 }
@@ -35,6 +50,7 @@ frappe.ui.form.on('Manufacture Order', {
                 console.error(err);
             }
         }
+
 
         // ------------------------------------------------------------
         // Check if job_card already has data
@@ -61,21 +77,6 @@ frappe.ui.form.on('Manufacture Order', {
         }
     },
     async refresh(frm) {
-
-
-        // frm.set_query('item_code', 'item_table', () => {
-        //     return {
-        //         filters: [
-        //             ["Item","disabled","=",0],
-        //             ["Item","item_group","descendants of (inclusive)","Finished Goods"] ,
-        //         ]
-        //     };
-        // });
-
-        // if (!frm.doc.fabrication_process && frm.doc.job_card && frm.doc.job_card.length) {
-        //     frm.clear_table('job_card');
-        //     frm.refresh_field('job_card');
-        // }
         if (frm.doc.docstatus == 1 && !frm.doc.start_time) {
 
             frm.add_custom_button('START', () => {
