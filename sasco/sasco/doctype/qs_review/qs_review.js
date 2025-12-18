@@ -60,7 +60,7 @@ frappe.ui.form.on("QS Review", {
                     child.rate               = rate;
                     child.sod_qty_sqm        = sod_qty_sqm;
                     child.sod_qty_kg         = sod_qty_kg;
-                    child.amount             = amount;
+                    child.sod_amount             = amount;
 
                     child.quantity = sod_quantity
                     child.utilized = mo_quantity
