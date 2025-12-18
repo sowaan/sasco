@@ -35,7 +35,7 @@ frappe.ui.form.on('Manufacture Order', {
                         // Now set fields that are not fetched-from (or override if needed)
                         // e.g. status / per_hour_rate
                         frappe.model.set_value(new_row.doctype, new_row.name, 'status', 'Hold');
-         
+
                         // If you want to explicitly read fetched values (operation_name/workstation)
                         // you can access locals:
                         // const latest = locals[new_row.doctype][new_row.name];
@@ -90,6 +90,14 @@ frappe.ui.form.on('Manufacture Order', {
             });
         }
 
+        var fabrication = await frappe.db.get_doc(
+            'Fabrication List',
+            frm.doc.fabrication_list
+        );
+
+        // existing logic ...
+        console.log("Building non-auto fold items...");
+        await build_non_auto_fold_items(frm);
 
         if (frm.doc.docstatus == 1 && frm.doc.start_time) {
 
@@ -982,11 +990,13 @@ frappe.ui.form.on('Manufacture Order', {
         frm.set_value('total_fl_item_qty', 0);
         frm.set_value('total_coil_item_qty', 0);
 
-
+        frm.set_value('non_auto_fold_items', []);
 
 
 
         if (frm.doc.fabrication_list) {
+
+            build_non_auto_fold_items(frm);
             var fabrication = await frappe.db.get_doc('Fabrication List', frm.doc.fabrication_list);
             // console.log(fabrication.fabrication_table) ;
 
@@ -997,6 +1007,7 @@ frappe.ui.form.on('Manufacture Order', {
             frm.set_value('total_fl_item_qty', fabrication.total_fl_item_qty);
             frm.set_value('total_coil_item_qty', fabrication.total_coil_item_qty);
 
+            let nonAutoFoldMap = {};
 
             fabrication.fabrication_table.forEach(item => {
 
@@ -1018,7 +1029,10 @@ frappe.ui.form.on('Manufacture Order', {
                 row.pl_item_length__angle = item.pl_item_length__angle;
                 row.fabrication_cost = item.operation_cost;
 
+
             });
+
+
 
 
             fabrication.material_list1.forEach(item => {
@@ -1332,6 +1346,72 @@ frappe.ui.form.on('Manufacture Order', {
 
 });
 
+async function build_non_auto_fold_items (frm) {
+
+    // Clear table
+    frm.set_value('non_auto_fold_items', []);
+
+    if (!frm.doc.fabrication_list) return;
+
+    // Fetch once
+    let fabrication = await frappe.db.get_doc(
+        'Fabrication List',
+        frm.doc.fabrication_list
+    );
+
+    let nonAutoFoldMap = {};
+
+    fabrication.fabrication_table.forEach(item => {
+
+        // NON AUTO FOLD CONDITION
+        if (
+            item.pl_item_length__angle !== 1220 ||
+            item.fl_item_specification !== "straight"
+        ) {
+
+            let spec = item.fl_item_specification || "Unknown";
+            let range = item.duct_range || "Unknown";
+
+            let key = `${spec}||${range}`;
+
+            if (!nonAutoFoldMap[key]) {
+                nonAutoFoldMap[key] = {
+                    fl_item_specification: spec,
+                    duct_range: range,
+                    fl_item_gauge: item.fl_item_gauge,
+                    pl_item_length__angle: item.pl_item_length__angle,
+                    coil_item_uom: item.coil_item_uom,
+                    fl_item_qty: 0,
+                    coil_item_qty: 0
+                };
+            }
+
+            nonAutoFoldMap[key].fl_item_qty += flt(item.fl_item_qty);
+            nonAutoFoldMap[key].coil_item_qty += flt(item.coil_item_qty);
+        }
+    });
+
+    // Push grouped rows
+    Object.values(nonAutoFoldMap).forEach(group => {
+
+        let row = frappe.model.add_child(
+            frm.doc,
+            "Non AutoFold Summary",
+            "non_auto_fold_items"
+        );
+
+        // Spec shown as description
+        row.fl_item_name_description = group.fl_item_specification;
+        row.fl_item_gauge = group.fl_item_gauge;
+        row.fl_item_qty = group.fl_item_qty;
+        row.pl_item_length__angle = group.pl_item_length__angle;
+        row.duct_range = group.duct_range;
+        row.coil_item_uom = group.coil_item_uom;
+        row.coil_item_qty = group.coil_item_qty;
+    });
+
+    frm.refresh_field('non_auto_fold_items');
+}
 
 
 frappe.ui.form.on('Manufacture Order Job Card', {

@@ -1,0 +1,94 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-18 13:31:27.405496",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_hdsv",
+  "fl_item_name_description",
+  "fl_item_gauge",
+  "fl_item_qty",
+  "pl_item_length__angle",
+  "duct_range",
+  "column_break_shrj",
+  "coil_item_uom",
+  "coil_item_qty"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_hdsv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "fl_item_name_description",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "FL Item Name Description",
+   "length": 999,
+   "read_only": 1
+  },
+  {
+   "fieldname": "fl_item_gauge",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "FL item Gauge",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "fl_item_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "FL Item Qty",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "pl_item_length__angle",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "PL item Length / Angle",
+   "non_negative": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "duct_range",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Duct Range",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_shrj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "coil_item_uom",
+   "fieldtype": "Data",
+   "label": "Coil Item UOM",
+   "read_only": 1
+  },
+  {
+   "fieldname": "coil_item_qty",
+   "fieldtype": "Float",
+   "label": "Coil Item Qty",
+   "read_only": 1
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-12-18 14:01:16.191424",
+ "modified_by": "Administrator",
+ "module": "Sasco",
+ "name": "Non Autofold Summary",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
