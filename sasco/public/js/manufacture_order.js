@@ -16,18 +16,44 @@ frappe.ui.form.on('Manufacture Order', {
 
                     // CLEAR only when we are sure we want to load
                     frm.clear_table('job_card');
-
+                    console.log('detail table', proc.detail_table);
                     for (const row of proc.detail_table) {
                         if (!row.operation) continue;
 
                         // add child row
                         const new_row = frm.add_child('job_card');
 
-                        // use frappe.model.set_value so fetch_from on 'operation' fires
-                        // Note: new_row.doctype and new_row.name are available
-                        frappe.model.set_value(new_row.doctype, new_row.name, 'operation', row.operation);
+                        // trigger fetch_from
+                        await frappe.model.set_value(
+                            new_row.doctype,
+                            new_row.name,
+                            'operation',
+                            row.operation
+                        );
+                        await frappe.model.set_value(
+                            new_row.doctype,
+                            new_row.name,
+                            'operation_name',
+                            row.operation_name
+                        );
+                        // allow fetch to complete
+                        await new Promise(resolve => setTimeout(resolve, 120));
 
-                        // Give the fetch a moment to populate fetch_from fields.
+                        // override fetched values
+                        frappe.model.set_value(new_row.doctype, new_row.name, 'status', 'Hold');
+
+
+                        if (row.machine_name) {
+                            frappe.model.set_value(
+                                new_row.doctype,
+                                new_row.name,
+                                'workstation',
+                                row.machine_name
+                            );
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 120));
+
+                         // Give the fetch a moment to populate fetch_from fields.
                         // If you prefer not to wait, you can omit this — but for reliability
                         // when immediately reading the fetched fields, a tiny delay helps.
                         await new Promise(resolve => setTimeout(resolve, 80));
@@ -36,6 +62,45 @@ frappe.ui.form.on('Manufacture Order', {
                         // e.g. status / per_hour_rate
                         frappe.model.set_value(new_row.doctype, new_row.name, 'status', 'Hold');
 
+                        let qty_in_pcs = 0;
+                        let amount = 0;
+                        let rate = flt(row.per_hour_rate || 0);
+
+                        if (row.items_included === "Auto Fold") {
+                            qty_in_pcs = flt(frm.doc.total_fl_item_qty);
+
+                        } else if (row.items_included === "Non-Auto Fold") {
+                            qty_in_pcs = flt(frm.doc.total_non_auto_fold_items);
+
+                        } else if (row.items_included === "All Items") {
+                            qty_in_pcs =
+                                flt(frm.doc.total_fl_item_qty) +
+                                flt(frm.doc.total_non_auto_fold_items);
+                        }
+
+                        amount = qty_in_pcs * rate;
+
+                        // console.log('Calculated qty_in_pcs:', qty_in_pcs, '; rate', row.per_hour_rate, '; Amount:', amount);
+                        frappe.model.set_value(
+                            new_row.doctype,
+                            new_row.name,
+                            'qty_in_pcs',
+                            qty_in_pcs
+                        );
+                        // frappe.model.set_value(
+                        //     new_row.doctype,
+                        //     new_row.name,
+                        //     'operation_cost',
+                        //     amount
+                        // );
+                        if (rate > 0) {
+                            frappe.model.set_value(
+                                new_row.doctype,
+                                new_row.name,
+                                'per_hour_rate',
+                                rate
+                            );
+                        }
                         // If you want to explicitly read fetched values (operation_name/workstation)
                         // you can access locals:
                         // const latest = locals[new_row.doctype][new_row.name];
@@ -1346,10 +1411,11 @@ frappe.ui.form.on('Manufacture Order', {
 
 });
 
-async function build_non_auto_fold_items (frm) {
+async function build_non_auto_fold_items(frm) {
 
     // Clear table
     frm.set_value('non_auto_fold_items', []);
+    frm.set_value('total_non_auto_fold_items', 0);
 
     if (!frm.doc.fabrication_list) return;
 
@@ -1360,6 +1426,7 @@ async function build_non_auto_fold_items (frm) {
     );
 
     let nonAutoFoldMap = {};
+    let totalNonAutoFoldQty = 0;
 
     fabrication.fabrication_table.forEach(item => {
 
@@ -1386,8 +1453,12 @@ async function build_non_auto_fold_items (frm) {
                 };
             }
 
-            nonAutoFoldMap[key].fl_item_qty += flt(item.fl_item_qty);
+            let qty = flt(item.fl_item_qty);
+
+            nonAutoFoldMap[key].fl_item_qty += qty;
             nonAutoFoldMap[key].coil_item_qty += flt(item.coil_item_qty);
+
+            totalNonAutoFoldQty += qty;
         }
     });
 
@@ -1410,7 +1481,10 @@ async function build_non_auto_fold_items (frm) {
         row.coil_item_qty = group.coil_item_qty;
     });
 
+    frm.set_value('total_non_auto_fold_items', totalNonAutoFoldQty);
+
     frm.refresh_field('non_auto_fold_items');
+    frm.refresh_field('total_non_auto_fold_items');
 }
 
 
