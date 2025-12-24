@@ -161,6 +161,7 @@ frappe.ui.form.on('Manufacture Order', {
         );
 
         // existing logic ...
+        console.log("Test Message......")
         if (!frm.doc.non_auto_fold_items || frm.doc.non_auto_fold_items.length === 0) {
             await build_non_auto_fold_items(frm);
         }
