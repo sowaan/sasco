@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "naming_series:naming_series",
+ "creation": "2024-08-20 16:53:18.255832",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "section_break_wf2g",
+  "naming_series",
+  "company",
+  "gate_out_time",
+  "remarks",
+  "column_break_exxj",
+  "vehicle_name",
+  "shipment_vehicle",
+  "driver",
+  "section_break_mgmh",
+  "delivery_details",
+  "items_section_section",
+  "detail_items",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_wf2g",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series"
+  },
+  {
+   "fieldname": "gate_out_time",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Gate Out Time",
+   "reqd": 1
+  },
+  {
+   "fieldname": "remarks",
+   "fieldtype": "Data",
+   "label": "Remarks",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_exxj",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "shipment_vehicle",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Shipment Vehicle",
+   "options": "Vehicle",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "shipment_vehicle.make",
+   "fieldname": "vehicle_name",
+   "fieldtype": "Data",
+   "label": "Vehicle Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "driver",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Driver",
+   "options": "Driver",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_mgmh",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "delivery_details",
+   "fieldtype": "Table",
+   "label": "Delivery Details",
+   "options": "Delivery Stops on Gate Pass",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Gate Pass",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "items_section_section",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "detail_items",
+   "fieldtype": "Table",
+   "label": "Items",
+   "options": "Gate Pass Items"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-12-29 10:43:20.764428",
+ "modified_by": "Administrator",
+ "module": "Sasco",
+ "name": "Gate Pass",
+ "naming_rule": "By \"Naming Series\" field",
+ "owner": "abdullah.ahmed@sowaan.com",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
