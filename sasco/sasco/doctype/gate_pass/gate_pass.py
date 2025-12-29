@@ -7,6 +7,13 @@ from frappe.model.document import Document
 
 class GatePass(Document):
 	def validate(self):
+		for row in self.delivery_details:
+			dn = frappe.get_doc("Delivery Note", row.delivery_note)
+			if dn.customer != self.customer or dn.docstatus != 1:
+				frappe.throw(
+					f"Delivery Note {dn.name} is not submitted or does not belong to selected customer"
+				)
+
 		self.validate_no_duplicate_dn_items()
 		self.validate_gate_pass_quantities()
 

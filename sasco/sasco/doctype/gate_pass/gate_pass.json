@@ -12,8 +12,9 @@
   "gate_out_time",
   "remarks",
   "column_break_exxj",
-  "vehicle_name",
+  "customer",
   "shipment_vehicle",
+  "vehicle_name",
   "driver",
   "section_break_mgmh",
   "delivery_details",
@@ -108,13 +109,19 @@
    "fieldtype": "Link",
    "label": "Company",
    "options": "Company"
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-12-29 10:43:20.764428",
+ "modified": "2025-12-29 13:55:19.514515",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Gate Pass",
