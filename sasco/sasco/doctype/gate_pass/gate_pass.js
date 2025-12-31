@@ -1,6 +1,5 @@
 // Copyright (c) 2025, Sowaan and contributors
 // For license information, please see license.txt
-let previous_customer = null;
 
 frappe.ui.form.on("Gate Pass", {
 	before_save(frm) {
@@ -35,90 +34,8 @@ frappe.ui.form.on("Gate Pass", {
 			);
 		}
 	},
-    onload(frm) {
-        previous_customer = frm.doc.customer || null;
-        toggle_delivery_details(frm);
-        set_delivery_note_filter(frm);
-    },
-
-    customer(frm) {
-        // If customer was already set and user is changing it
-        if (
-            previous_customer &&
-            frm.doc.customer &&
-            frm.doc.customer !== previous_customer &&
-            (
-                (frm.doc.delivery_details && frm.doc.delivery_details.length) ||
-                (frm.doc.detail_items && frm.doc.detail_items.length)
-            )
-        ) {
-            frappe.confirm(
-                __("Changing customer will remove all Delivery Details and Items. Do you want to continue?"),
-                () => {
-                    // YES → clear both tables
-                    frm.clear_table("delivery_details");
-                    frm.clear_table("detail_items");
-
-                    frm.refresh_field("delivery_details");
-                    frm.refresh_field("detail_items");
-
-                    previous_customer = frm.doc.customer;
-
-                    toggle_delivery_details(frm);
-                    set_delivery_note_filter(frm);
-                },
-                () => {
-                    // NO → revert customer
-                    frm.set_value("customer", previous_customer);
-                }
-            );
-            return;
-        }
-
-        // Customer cleared
-        if (!frm.doc.customer) {
-            frm.clear_table("delivery_details");
-            frm.clear_table("detail_items");
-
-            frm.refresh_field("delivery_details");
-            frm.refresh_field("detail_items");
-        }
-
-        previous_customer = frm.doc.customer || null;
-
-        toggle_delivery_details(frm);
-        set_delivery_note_filter(frm);
-    } 
 	
 });
-
-function toggle_delivery_details(frm) {
-    if (frm.doc.customer) {
-        frm.set_df_property("delivery_details", "read_only", 0);
-    } else {
-        frm.set_df_property("delivery_details", "read_only", 1);
-    }
-}
-
-function set_delivery_note_filter(frm) {
-    frm.set_query("delivery_note", "delivery_details", function () {
-        if (!frm.doc.customer) {
-            // No customer selected → no records
-            return {
-                filters: {
-                    name: ["=", "__invalid__"]
-                }
-            };
-        }
-
-        return {
-            filters: {
-                customer: frm.doc.customer,
-                docstatus: 1
-            }
-        };
-    });
-}
 frappe.ui.form.on("Delivery Stops on Gate Pass", {
     delivery_note(frm, cdt, cdn) {
         let row = locals[cdt][cdn];
