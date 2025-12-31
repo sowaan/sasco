@@ -33,7 +33,11 @@ frappe.ui.form.on("Gate Pass", {
 				__("Actions")
 			);
 		}
+        set_delivery_note_filter(frm);
 	},
+    onload(frm) {
+        set_delivery_note_filter(frm);
+    }
 	
 });
 frappe.ui.form.on("Delivery Stops on Gate Pass", {
@@ -88,6 +92,15 @@ function add_dn_items_to_gate_pass(frm, delivery_note) {
 }
 
 
+function set_delivery_note_filter(frm) {
+    frm.set_query("delivery_note", "delivery_details", function () {
+        return {
+            filters: {
+                docstatus: 1   // ✅ Submitted only
+            }
+        };
+    });
+}
 
 
 
