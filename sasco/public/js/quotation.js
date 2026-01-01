@@ -10,6 +10,29 @@ frappe.ui.form.on('Quotation', {
             };
         };
         toggle_price_list_field(frm);
+
+        if (frm.doc.docstatus === 1) {
+            frm.add_custom_button(
+                __("Sales Order"),
+                () => {
+                    frappe.call({
+                        method: "sasco.api.quotation_api.make_sales_order_from_quotation",
+                        args: {
+                            source_name: frm.doc.name
+                        },
+                        freeze: true,
+                        freeze_message: __("Creating Sales Order…"),
+                        callback(r) {
+                            if (!r.exc) {
+                                frappe.model.sync(r.message);
+                                frappe.set_route("Form", "Sales Order", r.message.name);
+                            }
+                        }
+                    });
+                },
+                __("Create")
+            );
+        }        
     },
     custom_allow_items_price_list: function(frm) {
         // When the checkbox is toggled
