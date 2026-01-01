@@ -9,6 +9,13 @@ def make_sales_order_from_quotation(source_name):
     def set_missing_values(source, target):
         target.custom_ref_quotation = source.name
         target.custom_parent_item = source.custom_parent_item
+        target.customer = source.party_name
+        target.run_method("set_customer_details")
+        target.custom_mobile_number = source.custom_mobile_no
+        target.company = source.company
+        target.custom_sales_inquiry_ref_ = source.custom_refrence
+        target.run_method("set_project_details")
+        # target.custom_project_location = source.custom_project_location
 
     def update_item(source, target, source_parent):
         target.custom_parent_item_1 = source.custom_parent_item_1
