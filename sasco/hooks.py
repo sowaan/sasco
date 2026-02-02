@@ -131,7 +131,10 @@ doctype_js = {
 # override_doctype_class = {
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
-
+#open this in future
+# override_doctype_class = {
+#     "Manufacture Order": "sasco.overrides.manufacture_order.CustomManufactureOrder"
+# }
 # Document Events
 # ---------------
 # Hook on document methods and events
