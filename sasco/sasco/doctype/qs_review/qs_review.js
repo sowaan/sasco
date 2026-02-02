@@ -110,6 +110,7 @@ frappe.ui.form.on("QS Review", {
 });
 
 function load_sales_order_items(frm) {
+    console.log("Sales Order Number: ", frm.doc.sales_order);
     if (!frm.doc.sales_order) return;
 
     frappe.call({
