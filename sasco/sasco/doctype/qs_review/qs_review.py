@@ -172,11 +172,37 @@ def get_qs_items(sales_order: str):
     - Aggregated Manufacture Order quantities (all MOs)
     """
 
+    frappe.log_error(
+    title="QS Review | get_qs_items | ENTRY",
+    message={
+        "sales_order": sales_order,
+        "called": True,
+    },
+)
+
     # 1) All Fabrication Lists for this SO (through Estimation Requests)
     fab_lists = _get_fabrication_lists_from_sales_order(sales_order)
 
+    frappe.log_error(
+    title="QS Review | Fabrication Lists",
+    message={
+        "sales_order": sales_order,
+        "fab_lists_count": len(fab_lists or []),
+        "fab_lists": fab_lists,
+    },
+)
+
     # 2) All Manufacture Orders linked to those Fabrication Lists
     mo_names = _get_manufacture_orders_from_fab_lists(fab_lists)
+
+    frappe.log_error(
+        title="QS Review | Manufacture Orders",
+        message={
+            "fab_lists_count": len(fab_lists or []),
+            "mo_count": len(mo_names or []),
+            "mo_names": mo_names,
+        },
+    )
 
     # 3) Base query for QS items (from Fabrication Parent Item)
     items = frappe.db.sql(
@@ -206,8 +232,24 @@ def get_qs_items(sales_order: str):
         as_dict=True,
     )
 
+    frappe.log_error(
+        title="QS Review | Base Items Query",
+        message={
+            "sales_order": sales_order,
+            "items_count": len(items or []),
+            "items": items,
+        },
+    )
+
     for item in items:
         item_code = item["item_code"]
+
+        for idx, item in enumerate(items):
+            if idx == 0:  # log only first item
+                frappe.log_error(
+                    title="QS Review | First Item Before Aggregation",
+                    message=item,
+                )
 
         # --- Fabrication List summary per item (sum over all FLs) ---
         if fab_lists:
@@ -242,6 +284,11 @@ def get_qs_items(sales_order: str):
         item["mo_spl_area_sqm"] = mo["spl_area_sqm"]
         item["mo_spl_weight_kg"] = mo["spl_weight_kg"]
 
+    if items:
+        frappe.log_error(
+            title="QS Review | First Item After Aggregation",
+            message=items[0],
+        )
     return items
 
 
