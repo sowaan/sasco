@@ -3,13 +3,14 @@
 
 frappe.ui.form.on("QS Review", {
     onload(frm) {
+        if (!frm.is_new()) return;
         load_sales_order_items(frm);
     },
 
-    refresh(frm) {
-        // Optional safety net if doc is loaded via route
-        load_sales_order_items(frm);
-    },
+    // refresh(frm) {
+    //     // Optional safety net if doc is loaded via route
+    //     load_sales_order_items(frm);
+    // },
 
     sales_order(frm) {
         // Still needed if user changes SO manually
