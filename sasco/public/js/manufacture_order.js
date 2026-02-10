@@ -1432,13 +1432,12 @@ async function build_non_auto_fold_items(frm) {
     let totalNonAutoFoldQty = 0;
 
     fabrication.fabrication_table.forEach(item => {
-
+        
         // NON AUTO FOLD CONDITION
-        if (
-            item.pl_item_length__angle !== 1220 ||
-            item.fl_item_specification !== "straight"
-        ) {
+        const spec = (item.fl_item_specification || "").toLowerCase().trim();
 
+        if (!(item.pl_item_length__angle === 1220 && spec === "straight"))  {
+            // console.log(item.pl_item_length__angle, item.fl_item_specification);
             let spec = item.fl_item_specification || "Unknown";
             let range = item.duct_range || "Unknown";
 
