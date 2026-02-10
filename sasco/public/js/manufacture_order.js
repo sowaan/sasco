@@ -160,12 +160,6 @@ frappe.ui.form.on('Manufacture Order', {
             frm.doc.fabrication_list
         );
 
-        // existing logic ...
-        console.log("Test Message......")
-        if (!frm.doc.non_auto_fold_items || frm.doc.non_auto_fold_items.length === 0) {
-            await build_non_auto_fold_items(frm);
-        }
-
 
         if (frm.doc.docstatus == 1 && frm.doc.start_time) {
 
@@ -1064,7 +1058,11 @@ frappe.ui.form.on('Manufacture Order', {
 
         if (frm.doc.fabrication_list) {
 
-            build_non_auto_fold_items(frm);
+
+            // if (!frm.doc.non_auto_fold_items || frm.doc.non_auto_fold_items.length === 0) {
+            //     await build_non_auto_fold_items(frm);
+            // }
+            
             var fabrication = await frappe.db.get_doc('Fabrication List', frm.doc.fabrication_list);
             // console.log(fabrication.fabrication_table) ;
 
@@ -1430,9 +1428,10 @@ async function build_non_auto_fold_items(frm) {
 
     let nonAutoFoldMap = {};
     let totalNonAutoFoldQty = 0;
-
+    
     fabrication.fabrication_table.forEach(item => {
         
+
         // NON AUTO FOLD CONDITION
         const spec = (item.fl_item_specification || "").toLowerCase().trim();
 
