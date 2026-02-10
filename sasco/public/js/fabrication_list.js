@@ -1,45 +1,40 @@
-//The scripts are not working as expected. Please fix the issues and make sure the code is functional.
-//The code is not called even when we add in hooks.py doctype_js = {"Sales Inquiry": "public/js/sales_inquiry.js"}
-//For now I've included the code in client script on website. Please fix the issues in this file and remove from client script.
-
-
 frappe.ui.form.on('Fabrication List', {
-    refresh(frm) {
+    refresh: function (frm) {
         if (frm.doc.docstatus === 1) {
-            frm.add_custom_button(
-                __("Sales Quotation"),
-                function () {
-                    frappe.prompt(
-                        [
-                            {
-                                fieldname: "uom",
-                                label: "Unit of Measurement",
-                                fieldtype: "Select",
-                                options: ["SQM", "KG"],
-                                reqd: 1,
-                                default: "SQM"
-                            }
-                        ],
-                        function (values) {
-                            frappe.call({
-                                method: "sasco.sasco.utils.fabrication_utils.create_quotation_from_fabrication",
-                                args: {
-                                    fabrication_name: frm.doc.name,
-                                    uom: values.uom
-                                },
-                                callback: function (r) {
-                                    if (!r.exc) {
-                                        frappe.set_route("Form", "Quotation", r.message);
-                                    }
-                                }
-                            });
-                        },
-                        __("Select UOM"),
-                        __("Create")
-                    );
-                },
-                __("Create")
-            );
+frm.add_custom_button(
+    __("Sales Quotation"),
+    function () {
+        frappe.prompt(
+            [
+                {
+                    fieldname: "uom",
+                    label: "Unit of Measurement",
+                    fieldtype: "Select",
+                    options: ["SQM", "KG"],
+                    reqd: 1,
+                    default: "SQM"
+                }
+            ],
+            function (values) {
+                frappe.call({
+                    method: "sasco.sasco.utils.fabrication_utils.create_quotation_from_fabrication",
+                    args: {
+                        fabrication_name: frm.doc.name,
+                        uom: values.uom
+                    },
+                    callback: function (r) {
+                        if (!r.exc) {
+                            frappe.set_route("Form", "Quotation", r.message);
+                        }
+                    }
+                });
+            },
+            __("Select UOM"),
+            __("Create")
+        );
+    },
+    __("Create")
+);            
             // frm.add_custom_button(
             //     __("Sales Quotation"),
             //     function () {
@@ -59,16 +54,16 @@ frappe.ui.form.on('Fabrication List', {
             frm.add_custom_button(
                 __("Manufacture Order"),
                 function () {
-                    sufyancreateManufactureOrder(frm.doc);
-                    // frappe.call({
-                    //     method: "sasco.sasco.utils.fabrication_utils.create_manufacture_order",
-                    //     args: { fabrication_name: frm.doc.name },
-                    //     callback: function(r) {
-                    //         if (r.message) {
-                    //             frappe.set_route("Form", "Manufacture Order", r.message);
-                    //         }
-                    //     }
-                    // });  
+                sufyancreateManufactureOrder(frm.doc);
+                // frappe.call({
+                //     method: "sasco.sasco.utils.fabrication_utils.create_manufacture_order",
+                //     args: { fabrication_name: frm.doc.name },
+                //     callback: function(r) {
+                //         if (r.message) {
+                //             frappe.set_route("Form", "Manufacture Order", r.message);
+                //         }
+                //     }
+                // });  
                 },
                 __("Create")
             );
@@ -351,7 +346,8 @@ async function sufyancreateManufactureOrder(fabrication) {
             date: fabrication.normal,
             fabrication_list: fabrication.name,
             total_fl_item_qty: fabrication.total_fl_item_qty,
-            total_coil_item_qty: fabrication.total_coil_item_qty
+            total_coil_item_qty: fabrication.total_coil_item_qty,
+            total_non_auto_fold_items: fabrication.total_non_auto_fold_items
         });
 
         // 1. Costing Sheet Items
@@ -441,6 +437,20 @@ async function sufyancreateManufactureOrder(fabrication) {
             });
         });
 
+        // 5b. Non-Auto Fold Summary (fixed)
+        fabrication.non_auto_fold_items.forEach(item => {
+            let row = frappe.model.add_child(doc, "Non Autofold Summary", "non_auto_fold_items");
+            Object.assign(row, {
+                fl_item_name_description: item.fl_item_name_description,
+                fl_item_gauge: item.fl_item_gauge,
+                fl_item_qty: item.fl_item_qty,
+                pl_item_length__angle: item.pl_item_length__angle,
+                duct_range: item.duct_range,
+                coil_item_uom: item.coil_item_uom,
+                coil_item_qty: item.coil_item_qty
+            });
+        });
+        
         // 6. Fabrication Item Summary
         fabrication.duct_and_acc_item.forEach(item => {
             let row = frappe.model.add_child(doc, "Fabrication Item Summary", "duct_and_acc_item");
@@ -580,7 +590,7 @@ async function sufyancreateQuotationChildItems(fabrication) {
                                     d[key] = value;
                                 }
                             });
-
+                            
                             if (d.price_list_rate != r.message.price_list_rate) {
                                 d.rate = 0.0;
                                 d.price_list_rate = r.message.price_list_rate;
@@ -633,7 +643,8 @@ async function sufyancreateQuotationChildItems(fabrication) {
 
             row.rate = 0;
             row.uom = "";
-            if (item.child_finished_good_item == "HDFSRI0000001 - M") {
+            if(item.child_finished_good_item=="HDFSRI0000001 - M")
+            {
                 console.log("item", item);
                 console.log("row on top", row);
             }
@@ -705,13 +716,14 @@ async function sufyancreateQuotationChildItems(fabrication) {
                                 d.price_list_rate = r.message.price_list_rate;
                                 frappe.model.set_value(d.doctype, d.name, "rate", d.price_list_rate);
                             }
-                            if (item.child_finished_good_item == "HDFSRI0000001 - M") {
-                                console.log("result", r.message);
-                                console.log("row", d);
-                            }
-
+            if(item.child_finished_good_item=="HDFSRI0000001 - M")
+            {
+                console.log("result",r.message);
+                            console.log("row",d);
+            }                            
+                            
                             // frappe.model.set_value(d.doctype, d.name, "qty", item.qty);
-                            // console.log("pricelistrate", d.item_code, d.price_list_rate)
+                           // console.log("pricelistrate", d.item_code, d.price_list_rate)
                             refresh_field("items");
                         }
                     },

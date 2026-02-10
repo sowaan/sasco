@@ -1052,7 +1052,7 @@ frappe.ui.form.on('Manufacture Order', {
         frm.set_value('total_fl_item_qty', 0);
         frm.set_value('total_coil_item_qty', 0);
 
-        frm.set_value('non_auto_fold_items', []);
+        // frm.set_value('non_auto_fold_items', []);
 
 
 
