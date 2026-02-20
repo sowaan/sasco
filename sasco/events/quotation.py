@@ -4,6 +4,12 @@ from frappe import _
 from erpnext.stock.get_item_details import get_price_list_rate_for
 from frappe.utils import flt, today ,cint, money_in_words
 
+def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+
+    if self.custom_inquiry_type == "BOQ":
+        # Remove mandatory flag dynamically
+        self.meta.get_field("items").reqd = 0
 def before_save(doc, method):
     if not doc.selling_price_list:
         frappe.throw("Price List is required to fetch rates.")

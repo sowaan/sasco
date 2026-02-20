@@ -1,3 +1,5 @@
+const DUMMY_ITEM_CODE = "Dummy Item";
+
 frappe.ui.form.on('Quotation', {
     refresh(frm) {
       //  console.log("✅Quotation form refreshed");
@@ -82,8 +84,71 @@ frappe.ui.form.on('Quotation', {
 	},    
     currency(frm) {
         update_currency_labels(frm);
-    }
+    },
+    custom_inquiry_type: function(frm) {
+        handle_boq_mode(frm);
+    },
+
+    before_save: function(frm) {
+        handle_boq_mode(frm);
+    }    
 });
+
+function handle_boq_mode(frm) {
+
+    const inquiry_type = frm.doc.custom_inquiry_type;
+
+    // 👉 For now only BOQ should have dummy
+    // const should_have_dummy = inquiry_type === "BOQ";
+    // Future ready:
+    const should_have_dummy = ["BOQ", "Unit Rate"].includes(inquiry_type);
+
+    let items = frm.doc.items || [];
+
+    // 🔹 Remove blank rows
+    frm.doc.items = items.filter(item => item.item_code);
+    items = frm.doc.items || [];
+
+    const dummy_exists = items.some(
+        item => item.item_code === DUMMY_ITEM_CODE
+    );
+
+    const real_items = items.filter(
+        item => item.item_code !== DUMMY_ITEM_CODE
+    );
+
+    if (should_have_dummy) {
+
+        // Only add dummy if:
+        // - No real items
+        // - Dummy not already present
+        if (real_items.length === 0 && !dummy_exists) {
+
+            let row = frm.add_child("items");
+
+            frappe.model.set_value(row.doctype, row.name, "item_code", DUMMY_ITEM_CODE)
+                .then(() => {
+                    frappe.model.set_value(row.doctype, row.name, "qty", 1);
+                    frappe.model.set_value(row.doctype, row.name, "rate", 0);
+                    frm.refresh_field("items");
+                });
+        }
+
+    } else {
+
+        // Remove dummy if switching away from BOQ
+        if (dummy_exists) {
+            frm.doc.items = items.filter(
+                item => item.item_code !== DUMMY_ITEM_CODE
+            );
+            frm.refresh_field("items");
+        }
+    }
+}
+
+
+
+
 
 function toggle_price_list_field(frm) {
 

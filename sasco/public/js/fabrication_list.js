@@ -438,8 +438,10 @@ async function sufyancreateManufactureOrder(fabrication) {
         });
 
         // 5b. Non-Auto Fold Summary (fixed)
+        console.log('non aut items in fab', fabrication.non_auto_fold_items);
         fabrication.non_auto_fold_items.forEach(item => {
             let row = frappe.model.add_child(doc, "Non Autofold Summary", "non_auto_fold_items");
+            console.log('item', item);
             Object.assign(row, {
                 fl_item_name_description: item.fl_item_name_description,
                 fl_item_gauge: item.fl_item_gauge,

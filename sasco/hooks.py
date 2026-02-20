@@ -40,7 +40,8 @@ app_include_js = "/assets/sasco/js/manufacture_order.js"
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 
 doctype_js = {
-    "Quotation" : "public/js/quotation.js"
+    "Quotation" : "public/js/quotation.js",
+    "Sales Order" : "public/js/sales_order.js"
 }
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -132,9 +133,9 @@ doctype_js = {
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 #open this in future
-# override_doctype_class = {
-#     "Manufacture Order": "sasco.overrides.manufacture_order.CustomManufactureOrder"
-# }
+override_doctype_class = {
+    "Quotation": "sasco.overrides.quotation.CustomQuotation"
+}
 # Document Events
 # ---------------
 # Hook on document methods and events
