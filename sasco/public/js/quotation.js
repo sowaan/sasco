@@ -35,6 +35,7 @@ frappe.ui.form.on('Quotation', {
                 __("Create")
             );
         }        
+        toggle_parent_item_fields(frm);
     },
     custom_allow_items_price_list: function(frm) {
         // When the checkbox is toggled
@@ -87,6 +88,7 @@ frappe.ui.form.on('Quotation', {
     },
     custom_inquiry_type: function(frm) {
         handle_boq_mode(frm);
+        toggle_parent_item_fields(frm);
     },
 
     before_save: function(frm) {
@@ -94,6 +96,32 @@ frappe.ui.form.on('Quotation', {
     }    
 });
 
+function toggle_parent_item_fields(frm) {
+
+    const editable_types = ["BOQ", "Item Price"];
+    const is_editable = editable_types.includes(frm.doc.custom_inquiry_type);
+
+    const fields_to_toggle = [
+        "cam_item_qty",
+        "selected_cam_item_qty",
+        "child_item_qty",
+        "selected_child_item_qty",
+        "selected_spl_area_sqm",
+        "rate"
+    ];
+
+    if (!frm.fields_dict.custom_parent_item) return;
+
+    fields_to_toggle.forEach(fieldname => {
+        frm.fields_dict.custom_parent_item.grid.update_docfield_property(
+            fieldname,
+            "read_only",
+            is_editable ? 0 : 1
+        );
+    });
+
+    frm.refresh_field("custom_parent_item");
+}
 function handle_boq_mode(frm) {
 
     const inquiry_type = frm.doc.custom_inquiry_type;

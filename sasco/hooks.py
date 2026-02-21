@@ -41,7 +41,8 @@ app_include_js = "/assets/sasco/js/manufacture_order.js"
 
 doctype_js = {
     "Quotation" : "public/js/quotation.js",
-    "Sales Order" : "public/js/sales_order.js"
+    "Sales Order" : "public/js/sales_order.js",
+    # "Fabrication List" : "public/js/fabrication_list.js",
 }
 
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
@@ -154,6 +155,9 @@ doc_events = {
 	},
     "Sales Inquiry": {
         "before_save": "sasco.events.sales_inquiry.before_save"
+    },
+    "Fabrication List":{
+        "before_submit": "sasco.events.fabrication_list.before_submit"
     }
 }
 
