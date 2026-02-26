@@ -31,13 +31,9 @@ def create_masters_from_fabrication(doc):
         })
 
 def before_submit(doc, method):
-    
-
     create_masters_from_fabrication(doc)
 
     update_sales_order_if_required(doc)
-
-    frappe.throw(f"Sumission Stopped....")
 
 def update_sales_order_if_required(doc):
     """
