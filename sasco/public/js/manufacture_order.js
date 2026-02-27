@@ -53,7 +53,7 @@ frappe.ui.form.on('Manufacture Order', {
                         }
                         await new Promise(resolve => setTimeout(resolve, 120));
 
-                         // Give the fetch a moment to populate fetch_from fields.
+                        // Give the fetch a moment to populate fetch_from fields.
                         // If you prefer not to wait, you can omit this — but for reliability
                         // when immediately reading the fetched fields, a tiny delay helps.
                         await new Promise(resolve => setTimeout(resolve, 80));
@@ -1062,7 +1062,7 @@ frappe.ui.form.on('Manufacture Order', {
             // if (!frm.doc.non_auto_fold_items || frm.doc.non_auto_fold_items.length === 0) {
             //     await build_non_auto_fold_items(frm);
             // }
-            
+
             var fabrication = await frappe.db.get_doc('Fabrication List', frm.doc.fabrication_list);
             // console.log(fabrication.fabrication_table) ;
 
@@ -1428,14 +1428,14 @@ async function build_non_auto_fold_items(frm) {
 
     let nonAutoFoldMap = {};
     let totalNonAutoFoldQty = 0;
-    
+
     fabrication.fabrication_table.forEach(item => {
-        
+
 
         // NON AUTO FOLD CONDITION
         const spec = (item.fl_item_specification || "").toLowerCase().trim();
 
-        if (!(item.pl_item_length__angle === 1220 && spec === "straight"))  {
+        if (!(item.pl_item_length__angle === 1220 && spec === "straight")) {
             // console.log(item.pl_item_length__angle, item.fl_item_specification);
             let spec = item.fl_item_specification || "Unknown";
             let range = item.duct_range || "Unknown";
@@ -1522,374 +1522,198 @@ frappe.ui.form.on('Manufacture Order Job Card', {
 
 
     operation_transfer: async function (frm, cdt, cdn) {
-        var sel_row = locals[cdt][cdn];
-        var res = await frappe.db.get_value("Operation", sel_row.operation, 'is_corrective_operation');
-        var q_st_check = res.message.is_corrective_operation;
 
-        if (sel_row.start == true && sel_row.end != true) {
-            console.log(q_st_check);
-
-            if (q_st_check == 1) {
-
-                const table_rpga_data = [...frm.doc.table_rpga] || [];
-
-
-                const tableFields = [
-                    { fieldtype: 'Link', options: 'Item', fieldname: 'item_code', label: 'FG Item Code', in_list_view: 1, read_only: 1, columns: 2, },
-                    { fieldtype: 'Data', fieldname: 'item_name', label: 'FG Item Name', in_list_view: 0, read_only: 1, columns: 1, },
-                    { fieldtype: 'Link', options: 'UOM', fieldname: 'uom', label: 'UOM', in_list_view: 0, read_only: 1, columns: 1, },
-
-                    { fieldtype: 'Select', fieldname: 'quality_status', label: 'Quality Status', options: 'Pass\nFails', in_list_view: 1, read_only: 0, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'item_gauge', label: 'Item Gauge', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'qty', label: 'Quantity', in_list_view: 1, read_only: 0, columns: 1, },
-
-                    { fieldtype: 'Link', options: 'Brand', fieldname: 'brand', label: 'Brand', in_list_view: 0, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'spl_area_sqm', label: 'SPL Area SQM', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'spl_weight_kg', label: 'SPL Weight KG', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'cam_item_vanes_splitter_qty_1', label: 'CAM Item Vanes Splitter Qty 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'cam_item_duct_seam_1', label: 'CAM Item Duct Seam 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'duct_range', label: 'Duct Range', in_list_view: 1, read_only: 1, columns: 1, },
-
-
-                    { fieldtype: 'Data', fieldname: 'duct_connector_1', label: 'Duct Connector 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'duct_connector_2', label: 'Duct Connector 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'pl_item_length__angle', label: 'PL Item Length / Angle', in_list_view: 1, read_only: 1, columns: 1, },
-
-
-                ];
-
-
-                let dialog = new frappe.ui.Dialog({
-                    title: 'Finished Goods Item',
-                    fields: [
-                        {
-                            fieldtype: 'Table',
-                            fieldname: 'item_table',
-                            label: 'Items',
-                            cannot_add_rows: 1,
-                            cannot_delete_rows: 1,
-                            description: 'This is a table with finished goods data.',
-                            fields: tableFields,
-                            data: [],
-                            get_data: () => {
-                                return dummyData;
-                            }
-                        }
-                    ],
-                    size: 'extra-large',
-                    primary_action_label: "Create Operations Transfer",
-                    primary_action(values) {
-
-                        let selected_items = values.item_table.filter(row => row.__checked === 1);
-
-                        for (let item of selected_items) {
-                            if (item.qty <= 0) {
-                                frappe.msgprint(`Error: Selected quantity for item ${item.item_code} must be at least 1.`);
-                                return;
-                            }
-                        }
-
-
-                        if (selected_items.length > 0) {
-
-                            frappe.call({
-                                method: 'frappe.client.insert',
-                                args: {
-                                    doc: {
-                                        doctype: 'Operations Transfers',
-                                        manufacture_order: frm.doc.name,
-                                        fabrication_list: frm.doc.fabrication_list,
-                                        project: frm.doc.project,
-                                        company: frm.doc.company,
-                                        operation: sel_row.operation,
-                                        operation_name: sel_row.operation_name,
-                                        machine_name: sel_row.machine_name,
-                                        status: sel_row.status,
-                                        start_time: sel_row.start_time,
-                                        end_time: sel_row.end_time,
-                                        time_spent: sel_row.time_spent,
-                                        docstatus: 1,
-                                        job_operation_row_name: sel_row.name,
-                                        quality_operation: 1,
-                                        item: selected_items.map(item => ({
-                                            item_code: item.item_code,
-                                            item_name: item.item_name,
-                                            quantity: item.qty,
-                                            uom: item.uom,
-                                            quality_status: item.quality_status,
-                                            brand: item.brand,
-                                            item_gauge: item.item_gauge,
-                                            spl_area_sqm: item.spl_area_sqm,
-                                            spl_weight_kg: item.spl_weight_kg,
-                                            cam_item_vanes_splitter_qty_1: item.cam_item_vanes_splitter_qty_1,
-                                            cam_item_duct_seam_1: item.cam_item_duct_seam_1,
-                                            duct_range: item.duct_range,
-                                            duct_connector_1: item.duct_connector_1,
-                                            duct_connector_2: item.duct_connector_2,
-                                            pl_item_length__angle: item.pl_item_length__angle,
-                                        }))
-                                    }
-                                },
-                                callback: function (r) {
-                                    if (!r.exc) {
-                                        frappe.msgprint(`Operations Transfer ${r.message.name} saved successfully!`);
-                                        frappe.model.set_value(sel_row.doctype, sel_row.name, 'operations_transfers_created', sel_row.operations_transfers_created + 1);
-                                        // frm.refresh_field('job_card');
-                                        // frm.refresh();
-
-
-
-                                        for (let item of selected_items) {
-
-                                            (frm.doc.item_table || []).forEach(x => {
-
-                                                if (x.item_code == item.item_code && item.quality_status == 'Pass') {
-                                                    frappe.model.set_value(x.doctype, x.name, 'pass_count', x.pass_count + 1);
-                                                    // break ;
-                                                }
-
-
-                                            });
-                                        }
-
-
-
-
-
-
-
-                                        if (frm.doc.docstatus == 1) {
-                                            frm.save('Update');
-                                        }
-                                        else if (frm.doc.docstatus == 0) {
-                                            frm.save();
-                                        }
-                                    } else {
-                                        frappe.msgprint(`Error: ${r.exc}`);
-                                    }
-                                }
-                            });
-
-                        }
-                        else {
-                            frappe.msgprint("Please select at least one item.");
-                        }
-
-                        dialog.hide();
-
-                    },
-
-
-                });
-
-
-                let dummyData = [];
-
-
-                (frm.doc.item_table || []).forEach(row => {
-                    dummyData.push({
-                        item_code: row.item_code,
-                        item_name: row.item_name,
-                        qty: row.quantity,
-                        uom: row.uom,
-                        quality_status: "Pass",
-                        brand: row.brand,
-                        item_gauge: row.item_guage,
-                        spl_area_sqm: row.spl_area_sqm,
-                        spl_weight_kg: row.spl_weight_kg,
-                        cam_item_vanes_splitter_qty_1: row.cam_item_vanes_splitter_qty_1,
-                        cam_item_duct_seam_1: row.cam_item_duct_seam_1,
-                        duct_range: row.duct_range,
-                        duct_connector_1: row.duct_connector_1,
-                        duct_connector_2: row.duct_connector_2,
-                        pl_item_length__angle: row.pl_item_length__angle,
-                    });
-                });
-
-                dialog.fields_dict.item_table.df.data = dummyData;
-                dialog.fields_dict.item_table.refresh();
-
-                dialog.show();
-            }
-
-            else {
-
-                const table_rpga_data = [...frm.doc.table_rpga] || [];
-                const tableFields = [
-
-                    { fieldtype: 'Link', options: 'Item', fieldname: 'item_code', label: 'FG Item Code', in_list_view: 1, read_only: 1, columns: 2, },
-
-
-                    { fieldtype: 'Data', fieldname: 'item_name', label: 'FG Item Name', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Link', options: 'UOM', fieldname: 'uom', label: 'UOM', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'qty', label: 'Quantity', in_list_view: 1, read_only: 0, columns: 1, },
-
-
-
-
-                    { fieldtype: 'Float', fieldname: 'item_gauge', label: 'Item Gauge', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Link', options: 'Brand', fieldname: 'brand', label: 'Brand', in_list_view: 0, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'spl_area_sqm', label: 'SPL Area SQM', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'spl_weight_kg', label: 'SPL Weight KG', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'cam_item_vanes_splitter_qty_1', label: 'CAM Item Vanes Splitter Qty 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'cam_item_duct_seam_1', label: 'CAM Item Duct Seam 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'duct_range', label: 'Duct Range', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'duct_connector_1', label: 'Duct Connector 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Data', fieldname: 'duct_connector_2', label: 'Duct Connector 1', in_list_view: 1, read_only: 1, columns: 1, },
-                    { fieldtype: 'Float', fieldname: 'pl_item_length__angle', label: 'PL Item Length / Angle', in_list_view: 1, read_only: 1, columns: 1, },
-
-
-
-
-                ];
-                let dialog = new frappe.ui.Dialog({
-                    title: 'Finished Goods Item',
-                    fields: [
-                        {
-                            fieldtype: 'Table',
-                            fieldname: 'item_table',
-                            label: 'Items',
-                            cannot_add_rows: 1,
-                            cannot_delete_rows: 1,
-                            description: 'This is a table with finished goods data.',
-                            fields: tableFields,
-                            data: [],
-                            get_data: () => {
-                                return dummyData;
-                            }
-                        }
-                    ],
-                    size: 'extra-large',
-                    primary_action_label: "Create Operations Transfer",
-                    primary_action(values) {
-
-                        let selected_items = values.item_table.filter(row => row.__checked === 1);
-
-                        for (let item of selected_items) {
-                            if (item.qty <= 0) {
-                                frappe.msgprint(`Error: Selected quantity for item ${item.item_code} must be at least 1.`);
-                                return;
-                            }
-                        }
-
-
-                        if (selected_items.length > 0) {
-
-
-                            frappe.call({
-                                method: 'frappe.client.insert',
-                                args: {
-                                    doc: {
-                                        doctype: 'Operations Transfers',
-                                        manufacture_order: frm.doc.name,
-                                        fabrication_list: frm.doc.fabrication_list,
-                                        project: frm.doc.project,
-                                        company: frm.doc.company,
-                                        operation: sel_row.operation,
-                                        operation_name: sel_row.operation_name,
-                                        machine_name: sel_row.machine_name,
-                                        status: sel_row.status,
-                                        start_time: sel_row.start_time,
-                                        end_time: sel_row.end_time,
-                                        time_spent: sel_row.time_spent,
-                                        docstatus: 1,
-                                        job_operation_row_name: sel_row.name,
-                                        item: selected_items.map(item => ({
-                                            item_code: item.item_code,
-                                            item_name: item.item_name,
-                                            quantity: item.qty,
-                                            uom: item.uom,
-                                            brand: item.brand,
-                                            item_gauge: item.item_gauge,
-                                            spl_area_sqm: item.spl_area_sqm,
-                                            spl_weight_kg: item.spl_weight_kg,
-                                            cam_item_vanes_splitter_qty_1: item.cam_item_vanes_splitter_qty_1,
-                                            cam_item_duct_seam_1: item.cam_item_duct_seam_1,
-                                            duct_range: item.duct_range,
-                                            duct_connector_1: item.duct_connector_1,
-                                            duct_connector_2: item.duct_connector_2,
-                                            pl_item_length__angle: item.pl_item_length__angle,
-                                        }))
-                                    }
-                                },
-                                callback: function (r) {
-                                    if (!r.exc) {
-                                        frappe.msgprint(`Operations Transfer ${r.message.name} saved successfully!`);
-                                        frappe.model.set_value(sel_row.doctype, sel_row.name, 'operations_transfers_created', sel_row.operations_transfers_created + 1);
-
-                                        for (let item of selected_items) {
-
-                                            (frm.doc.item_table || []).forEach(x => {
-
-                                                if (x.item_code == item.item_code && item.quality_status == 'Pass') {
-                                                    frappe.model.set_value(x.doctype, x.name, 'pass_count', x.pass_count + 1);
-                                                }
-
-
-                                            });
-                                        }
-
-
-                                        if (frm.doc.docstatus == 1) {
-                                            frm.save('Update');
-                                        }
-                                        else if (frm.doc.docstatus == 0) {
-                                            frm.save();
-                                        }
-                                    }
-                                    else {
-                                        frappe.msgprint(`Error: ${r.exc}`);
-                                    }
-                                }
-                            });
-
-
-
-
-                        }
-                        else {
-                            frappe.msgprint("Please select at least one item.");
-                        }
-
-                        dialog.hide();
-
-                    },
-
-
-                });
-                let dummyData = [];
-                (frm.doc.item_table || []).forEach(row => {
-                    dummyData.push({
-                        item_code: row.item_code,
-                        item_name: row.item_name,
-                        qty: row.quantity,
-                        uom: row.uom,
-
-
-
-                        brand: row.brand,
-                        item_gauge: row.item_guage,
-                        spl_area_sqm: row.spl_area_sqm,
-                        spl_weight_kg: row.spl_weight_kg,
-                        cam_item_vanes_splitter_qty_1: row.cam_item_vanes_splitter_qty_1,
-                        cam_item_duct_seam_1: row.cam_item_duct_seam_1,
-                        duct_range: row.duct_range,
-                        duct_connector_1: row.duct_connector_1,
-                        duct_connector_2: row.duct_connector_2,
-                        pl_item_length__angle: row.pl_item_length__angle,
-                    });
-                });
-                dialog.fields_dict.item_table.df.data = dummyData;
-                dialog.fields_dict.item_table.refresh();
-                dialog.show();
-
-
-            }
-
+        const sel_row = locals[cdt][cdn];
+
+        // Only allow if started and not ended
+        if (!(sel_row.start && !sel_row.end)) return;
+
+        // Check corrective operation
+        const res = await frappe.db.get_value(
+            "Operation",
+            sel_row.operation,
+            "is_corrective_operation"
+        );
+
+        const is_corrective = res.message?.is_corrective_operation == 1;
+
+        // -----------------------------
+        // Build Table Fields
+        // -----------------------------
+        let tableFields = [
+            { fieldtype: 'Link', options: 'Item', fieldname: 'item_code', label: 'FG Item Code', read_only: 1, in_list_view: 1 },
+            { fieldtype: 'Data', fieldname: 'item_name', label: 'FG Item Name', read_only: 1 },
+            { fieldtype: 'Link', options: 'UOM', fieldname: 'uom', label: 'UOM', read_only: 1 },
+            { fieldtype: 'Float', fieldname: 'qty', label: 'Quantity', in_list_view: 1 }
+        ];
+
+        if (is_corrective) {
+            tableFields.splice(3, 0, {
+                fieldtype: 'Select',
+                fieldname: 'quality_status',
+                label: 'Quality Status',
+                options: 'Pass\nFails',
+                in_list_view: 1
+            });
         }
 
-    },
+        // Add common extra fields
+        tableFields.push(
+            { fieldtype: 'Float', fieldname: 'item_gauge', label: 'Item Gauge', read_only: 1 },
+            { fieldtype: 'Link', options: 'Brand', fieldname: 'brand', label: 'Brand', read_only: 1 },
+            { fieldtype: 'Float', fieldname: 'spl_area_sqm', label: 'SPL Area SQM', read_only: 1 },
+            { fieldtype: 'Float', fieldname: 'spl_weight_kg', label: 'SPL Weight KG', read_only: 1 },
+            { fieldtype: 'Data', fieldname: 'duct_range', label: 'Duct Range', read_only: 1 }
+        );
 
+        // -----------------------------
+        // Prepare Data
+        // -----------------------------
+        const dummyData = (frm.doc.item_table || []).map(row => ({
+            item_code: row.item_code,
+            item_name: row.item_name,
+            qty: row.quantity,
+            uom: row.uom,
+            quality_status: is_corrective ? "Pass" : undefined,
+            brand: row.brand,
+            item_gauge: row.item_guage,  // keep your original field
+            spl_area_sqm: row.spl_area_sqm,
+            spl_weight_kg: row.spl_weight_kg,
+            duct_range: row.duct_range,
+            max_qty: available_qty
+        }));
+
+        // -----------------------------
+        // Dialog
+        // -----------------------------
+        let dialog = new frappe.ui.Dialog({
+            title: 'Finished Goods Item',
+            size: 'extra-large',
+            fields: [{
+                fieldtype: 'Table',
+                fieldname: 'item_table',
+                label: 'Items',
+                cannot_add_rows: 1,
+                cannot_delete_rows: 1,
+                fields: tableFields,
+                data: dummyData
+            }],
+            primary_action_label: "Create Operations Transfer",
+            primary_action(values) {
+
+                let selected = (values.item_table || []).filter(r => r.__checked);
+
+                if (!selected.length) {
+                    frappe.msgprint("Please select at least one item.");
+                    return;
+                }
+
+                for (let item of selected) {
+
+                    let original_row = (frm.doc.item_table || [])
+                        .find(x => x.item_code === item.item_code);
+
+                    let available_qty =
+                        (original_row.quantity || 0) -
+                        (original_row.transferred_qty || 0);
+
+                    if (item.qty <= 0) {
+                        frappe.msgprint(`Quantity must be greater than 0 for ${item.item_code}`);
+                        return;
+                    }
+
+                    if (item.qty > available_qty) {
+                        frappe.msgprint(
+                            `Over-transfer not allowed for ${item.item_code}.
+                    Available Qty: ${available_qty}`
+                        );
+                        return;
+                    }
+                }
+
+                // -----------------------------
+                // Build Document
+                // -----------------------------
+                let doc = {
+                    doctype: 'Operations Transfers',
+                    manufacture_order: frm.doc.name,
+                    fabrication_list: frm.doc.fabrication_list,
+                    project: frm.doc.project,
+                    company: frm.doc.company,
+                    operation: sel_row.operation,
+                    operation_name: sel_row.operation_name,
+                    machine_name: sel_row.machine_name,
+                    status: sel_row.status,
+                    start_time: sel_row.start_time,
+                    end_time: sel_row.end_time,
+                    time_spent: sel_row.time_spent,
+                    job_operation_row_name: sel_row.name,
+                    docstatus: 1,
+                    item: selected.map(item => ({
+                        item_code: item.item_code,
+                        item_name: item.item_name,
+                        quantity: item.qty,
+                        uom: item.uom,
+                        brand: item.brand,
+                        item_gauge: item.item_gauge,
+                        spl_area_sqm: item.spl_area_sqm,
+                        spl_weight_kg: item.spl_weight_kg,
+                        duct_range: item.duct_range,
+                        quality_status: is_corrective ? item.quality_status : undefined
+                    }))
+                };
+
+                if (is_corrective) {
+                    doc.quality_operation = 1;
+                }
+
+                frappe.call({
+                    method: 'frappe.client.insert',
+                    args: { doc },
+                    callback: function (r) {
+                        if (r.exc) {
+                            frappe.msgprint(r.exc);
+                            return;
+                        }
+
+                        frappe.msgprint(`Operations Transfer ${r.message.name} created successfully`);
+
+                        // Increment counter safely
+                        frappe.model.set_value(
+                            sel_row.doctype,
+                            sel_row.name,
+                            'operations_transfers_created',
+                            (sel_row.operations_transfers_created || 0) + 1
+                        );
+
+                        // Update pass count only for corrective
+                        if (is_corrective) {
+                            selected.forEach(item => {
+                                if (item.quality_status === 'Pass') {
+                                    (frm.doc.item_table || []).forEach(x => {
+                                        if (x.item_code === item.item_code) {
+                                            frappe.model.set_value(
+                                                x.doctype,
+                                                x.name,
+                                                'pass_count',
+                                                (x.pass_count || 0) + 1
+                                            );
+                                        }
+                                    });
+                                }
+                            });
+                        }
+
+                        frm.save(frm.doc.docstatus === 1 ? 'Update' : undefined);
+                    }
+                });
+
+                dialog.hide();
+            }
+        });
+
+        dialog.show();
+    },
 
 
     before_job_card_remove: function (frm, cdt, cdn) {
