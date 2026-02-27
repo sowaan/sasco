@@ -1580,7 +1580,7 @@ frappe.ui.form.on('Manufacture Order Job Card', {
             spl_area_sqm: row.spl_area_sqm,
             spl_weight_kg: row.spl_weight_kg,
             duct_range: row.duct_range,
-            max_qty: available_qty
+            // max_qty: available_qty
         }));
 
         // -----------------------------
