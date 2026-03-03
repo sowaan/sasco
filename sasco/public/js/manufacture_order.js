@@ -1521,201 +1521,217 @@ frappe.ui.form.on('Manufacture Order Job Card', {
     },
 
 
-    operation_transfer: async function (frm, cdt, cdn) {
+operation_transfer: async function (frm, cdt, cdn) {
 
-        const sel_row = locals[cdt][cdn];
+    const sel_row = locals[cdt][cdn];
 
-        // Only allow if started and not ended
-        if (!(sel_row.start && !sel_row.end)) return;
+    // Only allow if started and not ended
+    if (!(sel_row.start && !sel_row.end)) return;
 
-        // Check corrective operation
-        const res = await frappe.db.get_value(
-            "Operation",
-            sel_row.operation,
-            "is_corrective_operation"
-        );
+    // ---------------------------------
+    // Get corrective flag
+    // ---------------------------------
+    const op = await frappe.db.get_value(
+        "Operation",
+        sel_row.operation,
+        "is_corrective_operation"
+    );
 
-        const is_corrective = res.message?.is_corrective_operation == 1;
+    const is_corrective = op.message?.is_corrective_operation == 1;
 
-        // -----------------------------
-        // Build Table Fields
-        // -----------------------------
-        let tableFields = [
-            { fieldtype: 'Link', options: 'Item', fieldname: 'item_code', label: 'FG Item Code', read_only: 1, in_list_view: 1 },
-            { fieldtype: 'Data', fieldname: 'item_name', label: 'FG Item Name', read_only: 1 },
-            { fieldtype: 'Link', options: 'UOM', fieldname: 'uom', label: 'UOM', read_only: 1 },
-            { fieldtype: 'Float', fieldname: 'qty', label: 'Quantity', in_list_view: 1 }
-        ];
+    // ---------------------------------
+    // Get already transferred qty map
+    // ---------------------------------
+    const transferredMap = await getTransferredQtyMap(
+        frm.doc.name,
+        sel_row.operation
+    );
 
-        if (is_corrective) {
-            tableFields.splice(3, 0, {
-                fieldtype: 'Select',
-                fieldname: 'quality_status',
-                label: 'Quality Status',
-                options: 'Pass\nFails',
-                in_list_view: 1
+    // ---------------------------------
+    // Build table fields
+    // ---------------------------------
+    let tableFields = [
+        { fieldtype: 'Link', options: 'Item', fieldname: 'item_code', label: 'FG Item Code', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Data', fieldname: 'item_name', label: 'FG Item Name', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Link', options: 'UOM', fieldname: 'uom', label: 'UOM', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Float', fieldname: 'qty', label: 'Quantity', in_list_view: 1, columns: 1 }
+    ];
+
+    if (is_corrective) {
+        tableFields.splice(3, 0, {
+            fieldtype: 'Select',
+            fieldname: 'quality_status',
+            label: 'Quality Status',
+            options: 'Pass\nFails',
+            in_list_view: 1,
+            columns: 1
+        });
+    }
+
+    tableFields.push(
+        { fieldtype: 'Float', fieldname: 'item_gauge', label: 'Item Gauge', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Link', options: 'Brand', fieldname: 'brand', label: 'Brand', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Float', fieldname: 'spl_area_sqm', label: 'SPL Area SQM', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Float', fieldname: 'spl_weight_kg', label: 'SPL Weight KG', read_only: 1, in_list_view: 1, columns: 1 },
+        { fieldtype: 'Data', fieldname: 'duct_range', label: 'Duct Range', read_only: 1, in_list_view: 1, columns: 1 }
+    );
+
+    // ---------------------------------
+    // Build dialog data (remove fully transferred)
+    // ---------------------------------
+    const dummyData = [];
+
+    (frm.doc.item_table || []).forEach(row => {
+
+        const transferred = transferredMap[row.item_code] || 0;
+        const remaining = (row.quantity || 0) - transferred;
+
+        if (remaining > 0) {
+
+            dummyData.push({
+                item_code: row.item_code,
+                item_name: row.item_name,
+                qty: remaining,
+                uom: row.uom,
+                quality_status: is_corrective ? "Pass" : undefined,
+                brand: row.brand,
+                item_gauge: row.item_guage,
+                spl_area_sqm: row.spl_area_sqm,
+                spl_weight_kg: row.spl_weight_kg,
+                duct_range: row.duct_range
             });
+
         }
+    });
 
-        // Add common extra fields
-        tableFields.push(
-            { fieldtype: 'Float', fieldname: 'item_gauge', label: 'Item Gauge', read_only: 1 },
-            { fieldtype: 'Link', options: 'Brand', fieldname: 'brand', label: 'Brand', read_only: 1 },
-            { fieldtype: 'Float', fieldname: 'spl_area_sqm', label: 'SPL Area SQM', read_only: 1 },
-            { fieldtype: 'Float', fieldname: 'spl_weight_kg', label: 'SPL Weight KG', read_only: 1 },
-            { fieldtype: 'Data', fieldname: 'duct_range', label: 'Duct Range', read_only: 1 }
-        );
+    if (!dummyData.length) {
+        frappe.msgprint("All items already fully transferred.");
+        return;
+    }
 
-        // -----------------------------
-        // Prepare Data
-        // -----------------------------
-        const dummyData = (frm.doc.item_table || []).map(row => ({
-            item_code: row.item_code,
-            item_name: row.item_name,
-            qty: row.quantity,
-            uom: row.uom,
-            quality_status: is_corrective ? "Pass" : undefined,
-            brand: row.brand,
-            item_gauge: row.item_guage,  // keep your original field
-            spl_area_sqm: row.spl_area_sqm,
-            spl_weight_kg: row.spl_weight_kg,
-            duct_range: row.duct_range,
-            // max_qty: available_qty
-        }));
+    // ---------------------------------
+    // Dialog
+    // ---------------------------------
+    const dialog = new frappe.ui.Dialog({
+        title: 'Finished Goods Item',
+        size: 'extra-large',
+        fields: [{
+            fieldtype: 'Table',
+            fieldname: 'item_table',
+            label: 'Items',
+            cannot_add_rows: 1,
+            cannot_delete_rows: 1,
+            fields: tableFields,
+            data: dummyData
+        }],
+        primary_action_label: "Create Operations Transfer",
+        primary_action: async function(values) {
 
-        // -----------------------------
-        // Dialog
-        // -----------------------------
-        let dialog = new frappe.ui.Dialog({
-            title: 'Finished Goods Item',
-            size: 'extra-large',
-            fields: [{
-                fieldtype: 'Table',
-                fieldname: 'item_table',
-                label: 'Items',
-                cannot_add_rows: 1,
-                cannot_delete_rows: 1,
-                fields: tableFields,
-                data: dummyData
-            }],
-            primary_action_label: "Create Operations Transfer",
-            primary_action(values) {
+            const selected = (values.item_table || []).filter(r => r.__checked);
 
-                let selected = (values.item_table || []).filter(r => r.__checked);
+            if (!selected.length) {
+                frappe.msgprint("Please select at least one item.");
+                return;
+            }
 
-                if (!selected.length) {
-                    frappe.msgprint("Please select at least one item.");
+            // Validate over-transfer properly
+            for (let item of selected) {
+
+                const original = (frm.doc.item_table || [])
+                    .find(x => x.item_code === item.item_code);
+
+                const alreadyTransferred = transferredMap[item.item_code] || 0;
+                const maxAllowed = (original.quantity || 0) - alreadyTransferred;
+
+                if (item.qty <= 0) {
+                    frappe.msgprint(`Quantity must be greater than 0 for ${item.item_code}`);
                     return;
                 }
 
-                for (let item of selected) {
-
-                    let original_row = (frm.doc.item_table || [])
-                        .find(x => x.item_code === item.item_code);
-
-                    let available_qty =
-                        (original_row.quantity || 0) -
-                        (original_row.transferred_qty || 0);
-
-                    if (item.qty <= 0) {
-                        frappe.msgprint(`Quantity must be greater than 0 for ${item.item_code}`);
-                        return;
-                    }
-
-                    if (item.qty > available_qty) {
-                        frappe.msgprint(
-                            `Over-transfer not allowed for ${item.item_code}.
-                    Available Qty: ${available_qty}`
-                        );
-                        return;
-                    }
+                if (item.qty > maxAllowed) {
+                    frappe.msgprint(
+                        `Over-transfer not allowed for ${item.item_code}.
+Available Qty: ${maxAllowed}`
+                    );
+                    return;
                 }
+            }
 
-                // -----------------------------
-                // Build Document
-                // -----------------------------
-                let doc = {
-                    doctype: 'Operations Transfers',
-                    manufacture_order: frm.doc.name,
-                    fabrication_list: frm.doc.fabrication_list,
-                    project: frm.doc.project,
-                    company: frm.doc.company,
-                    operation: sel_row.operation,
-                    operation_name: sel_row.operation_name,
-                    machine_name: sel_row.machine_name,
-                    status: sel_row.status,
-                    start_time: sel_row.start_time,
-                    end_time: sel_row.end_time,
-                    time_spent: sel_row.time_spent,
-                    job_operation_row_name: sel_row.name,
-                    docstatus: 1,
-                    item: selected.map(item => ({
-                        item_code: item.item_code,
-                        item_name: item.item_name,
-                        quantity: item.qty,
-                        uom: item.uom,
-                        brand: item.brand,
-                        item_gauge: item.item_gauge,
-                        spl_area_sqm: item.spl_area_sqm,
-                        spl_weight_kg: item.spl_weight_kg,
-                        duct_range: item.duct_range,
-                        quality_status: is_corrective ? item.quality_status : undefined
-                    }))
-                };
+            // Build document
+            const doc = {
+                doctype: 'Operations Transfers',
+                manufacture_order: frm.doc.name,
+                fabrication_list: frm.doc.fabrication_list,
+                project: frm.doc.project,
+                company: frm.doc.company,
+                operation: sel_row.operation,
+                operation_name: sel_row.operation_name,
+                machine_name: sel_row.machine_name,
+                status: sel_row.status,
+                start_time: sel_row.start_time,
+                end_time: sel_row.end_time,
+                time_spent: sel_row.time_spent,
+                job_operation_row_name: sel_row.name,
+                docstatus: 1,
+                quality_operation: is_corrective ? 1 : 0,
+                item: selected.map(item => ({
+                    item_code: item.item_code,
+                    item_name: item.item_name,
+                    quantity: item.qty,
+                    uom: item.uom,
+                    brand: item.brand,
+                    item_gauge: item.item_gauge,
+                    spl_area_sqm: item.spl_area_sqm,
+                    spl_weight_kg: item.spl_weight_kg,
+                    duct_range: item.duct_range,
+                    quality_status: is_corrective ? item.quality_status : undefined
+                }))
+            };
 
-                if (is_corrective) {
-                    doc.quality_operation = 1;
-                }
+            const r = await frappe.call({
+                method: 'frappe.client.insert',
+                args: { doc }
+            });
 
-                frappe.call({
-                    method: 'frappe.client.insert',
-                    args: { doc },
-                    callback: function (r) {
-                        if (r.exc) {
-                            frappe.msgprint(r.exc);
-                            return;
-                        }
+            if (r.exc) {
+                frappe.msgprint(r.exc);
+                return;
+            }
 
-                        frappe.msgprint(`Operations Transfer ${r.message.name} created successfully`);
+            frappe.msgprint(`Operations Transfer ${r.message.name} created successfully`);
 
-                        // Increment counter safely
-                        frappe.model.set_value(
-                            sel_row.doctype,
-                            sel_row.name,
-                            'operations_transfers_created',
-                            (sel_row.operations_transfers_created || 0) + 1
-                        );
+            frappe.model.set_value(
+                sel_row.doctype,
+                sel_row.name,
+                'operations_transfers_created',
+                (sel_row.operations_transfers_created || 0) + 1
+            );
 
-                        // Update pass count only for corrective
-                        if (is_corrective) {
-                            selected.forEach(item => {
-                                if (item.quality_status === 'Pass') {
-                                    (frm.doc.item_table || []).forEach(x => {
-                                        if (x.item_code === item.item_code) {
-                                            frappe.model.set_value(
-                                                x.doctype,
-                                                x.name,
-                                                'pass_count',
-                                                (x.pass_count || 0) + 1
-                                            );
-                                        }
-                                    });
-                                }
-                            });
-                        }
-
-                        frm.save(frm.doc.docstatus === 1 ? 'Update' : undefined);
+            if (is_corrective) {
+                selected.forEach(item => {
+                    if (item.quality_status === 'Pass') {
+                        (frm.doc.item_table || []).forEach(x => {
+                            if (x.item_code === item.item_code) {
+                                frappe.model.set_value(
+                                    x.doctype,
+                                    x.name,
+                                    'pass_count',
+                                    (x.pass_count || 0) + 1
+                                );
+                            }
+                        });
                     }
                 });
-
-                dialog.hide();
             }
-        });
 
-        dialog.show();
-    },
+            await frm.save(frm.doc.docstatus === 1 ? 'Update' : undefined);
 
+            dialog.hide();
+        }
+    });
 
+    dialog.show();
+},
     before_job_card_remove: function (frm, cdt, cdn) {
         row = locals[cdt][cdn];
         if (row.operations_transfers_created >= 1) {
@@ -1725,3 +1741,42 @@ frappe.ui.form.on('Manufacture Order Job Card', {
 
 
 });
+
+
+async function getTransferredQtyMap(manufacture_order, operation) {
+    console.log("hello world.....");
+    let transferredMap = {};
+
+    let result = await frappe.call({
+        method: "frappe.client.get_list",
+        args: {
+            doctype: "Operations Transfers",
+            filters: {
+                manufacture_order: manufacture_order,
+                operation: operation
+            },
+            fields: ["name"]
+        }
+    });
+
+    let docs = result.message || [];
+
+    for (let doc of docs) {
+
+        let full_doc = await frappe.db.get_doc(
+            "Operations Transfers",
+            doc.name
+        );
+
+        (full_doc.item || []).forEach(row => {
+
+            if (!transferredMap[row.item_code]) {
+                transferredMap[row.item_code] = 0;
+            }
+
+            transferredMap[row.item_code] += row.quantity || 0;
+        });
+    }
+
+    return transferredMap;
+}

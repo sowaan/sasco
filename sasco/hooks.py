@@ -157,7 +157,8 @@ doc_events = {
         "before_save": "sasco.events.sales_inquiry.before_save"
     },
     "Fabrication List":{
-        "before_submit": "sasco.events.fabrication_list.before_submit"
+        "before_submit": "sasco.events.fabrication_list.before_submit",
+        "before_save":"sasco.events.fabrication_list.before_save",
     }
 }
 

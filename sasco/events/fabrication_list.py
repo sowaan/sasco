@@ -35,6 +35,12 @@ def before_submit(doc, method):
 
     update_sales_order_if_required(doc)
 
+def before_save(doc, method):
+    pass
+    # frappe.log_error(f"saving data {doc.name}", f"{doc}")
+    
+    # update_sales_order_if_required(doc)
+
 def update_sales_order_if_required(doc):
     """
     Triggered before Fabrication List submit
@@ -55,7 +61,39 @@ def update_sales_order_if_required(doc):
 
     add_items_to_sales_order(doc, sales_order)
 
+def get_total_parent_amount(sales_order):
+    total = 0
 
+    for row in sales_order.custom_parent_item or []:
+        total += flt(row.amount or 0)
+
+    return total
+
+def distribute_parent_price_equally(sales_order):
+
+    total_parent_amount = get_total_parent_amount(sales_order)
+
+    if not total_parent_amount:
+        return
+
+    valid_items = [
+        row for row in sales_order.items
+        if row.item_code != DUMMY_ITEM_CODE
+    ]
+
+    if not valid_items:
+        return
+
+    total_qty = sum(flt(row.qty) for row in valid_items)
+
+    if total_qty == 0:
+        return
+
+    rate_per_unit = total_parent_amount / total_qty
+
+    for row in valid_items:
+        row.rate = rate_per_unit
+    
 def add_items_to_sales_order(fabrication_doc, sales_order):
     """
     Append Fabrication items into Sales Order
@@ -71,7 +109,7 @@ def add_items_to_sales_order(fabrication_doc, sales_order):
 
     # Collect fabrication items
     items_to_add = collect_fabrication_items(fabrication_doc)
-    frappe.log_error(title="Items List after merge", message=str(items_to_add))
+    # frappe.log_error(title="Items List after merge", message=str(items_to_add))
     # frappe.log_error(f"items to add {sales_order.name}", f"{items_to_add}")
     updated = False
 
@@ -146,11 +184,14 @@ def add_items_to_sales_order(fabrication_doc, sales_order):
         row.custom_stiffener = item.get("custom_stiffener")
         row.custom_joint = item.get("custom_joint")
 
-        frappe.log_error(title="adding item {item_code}", message=f"{row}")
+        # frappe.log_error(title="adding item {item_code}", message=f"{row}")
         updated = True
 
     if not updated:
         return
+
+    # 🔵 Distribute pricing
+    distribute_parent_price_equally(sales_order)
 
     # Recalculate & Save
     if sales_order.docstatus == 1:
@@ -187,7 +228,7 @@ def collect_fabrication_items(doc):
             items.append({
                 "item_code": row.fg_batch_sr,
                 "qty": qty,
-                "description": row.fl_item_description,
+                "description": row.fl_item_specification,
                 "uom": uom,
                 "parent_item": row.spl_item_fg_code,
                 "custom_s1": getattr(row, "dim_1", None),
