@@ -35,8 +35,7 @@ def before_submit(doc, method):
 
     update_sales_order_if_required(doc)
 
-def before_save(doc, method):
-    pass
+
     # frappe.log_error(f"saving data {doc.name}", f"{doc}")
     
     # update_sales_order_if_required(doc)
@@ -274,3 +273,288 @@ def merge_duplicate_items(items):
             merged[code]["qty"] += item["qty"]
 
     return list(merged.values())
+
+
+
+def before_save(doc, method):
+    # process_fabrication_logic(doc)
+    pass
+
+def process_fabrication_logic(doc):
+
+    # ---------------------------------------------------------
+    # Clear child tables
+    # ---------------------------------------------------------
+    doc.set("duct_and_acc_item", [])
+    doc.set("acc_item", [])
+    doc.set("acc_item1", [])
+    doc.set("material_summary", [])
+    doc.set("material_list1", [])
+    doc.set("fabrication_list_table", [])
+    doc.set("auto_fold_list", [])
+    doc.set("auto_fold_summary", [])
+    doc.set("non_auto_fold_items", [])
+
+    # =========================================================
+    # 1️⃣ GROUP BY DUCT / ACCESSORY ITEMS
+    # =========================================================
+
+    fab_unique_items = {}
+
+    if doc.fabrication_table:
+        for row in doc.fabrication_table:
+            key = row.spl_item_fg_code
+
+            if key not in fab_unique_items:
+                fab_unique_items[key] = {
+                    "item_code": row.spl_item_fg_code,
+                    "item_name": row.spl_item_fg_name,
+                    "uom": row.spl_item_fg_uom,
+                    "qty": row.spl_qty_in_pcs or 0,
+                    "spl_area_sqm": row.spl_area_sqm or 0,
+                    "spl_weight_kg": row.spl_weight_kg or 0,
+                    "duct_range": row.duct_range,
+                    "thickness": row.fl_item_gauge,
+                }
+            else:
+                fab_unique_items[key]["qty"] += row.spl_qty_in_pcs or 0
+                fab_unique_items[key]["spl_area_sqm"] += row.spl_area_sqm or 0
+                fab_unique_items[key]["spl_weight_kg"] += row.spl_weight_kg or 0
+
+        for value in fab_unique_items.values():
+            doc.append("duct_and_acc_item", {
+                "item_code": value["item_code"],
+                "item_name": value["item_name"],
+                "uom": value["uom"],
+                "qty": value["qty"],
+                "spl_area_sqm": value["spl_area_sqm"],
+                "spl_weight_kg": value["spl_weight_kg"],
+                "duct_range": value["duct_range"],
+                "thickness": value["thickness"],
+            })
+
+    # =========================================================
+    # 2️⃣ ACCESSORY GROUPING
+    # =========================================================
+
+    unique_items = {}
+
+    if doc.accessory:
+        for row in doc.accessory:
+            key = (row.child_finished_good_item, row.child_finished_good_uom)
+
+            if key not in unique_items:
+                unique_items[key] = {
+                    "item_code": row.child_finished_good_item,
+                    "item_name": row.child_finished_good_item_name,
+                    "uom": row.child_finished_good_uom,
+                    "qty": row.child_finished_good_qty or 0,
+                }
+            else:
+                unique_items[key]["qty"] += row.child_finished_good_qty or 0
+
+        for value in unique_items.values():
+            doc.append("acc_item", value)
+            doc.append("acc_item1", value)
+
+    # =========================================================
+    # 3️⃣ GROUP BY MATERIAL ITEM
+    # =========================================================
+
+    mat_unique_items = {}
+
+    if doc.material_list:
+        for row in doc.material_list:
+
+            # Copy full list into material_list1
+            doc.append("material_list1", row.as_dict())
+
+            key = (
+                row.coil_item_code_rm,
+                row.coil_item_uom,
+                row.coil_item_brand,
+                row.spl_item_fg_code,
+                row.fl_item_gauge,
+            )
+
+            if key not in mat_unique_items:
+                mat_unique_items[key] = {
+                    "parent_finished_good": row.spl_item_fg_code,
+                    "item_code": row.coil_item_code_rm,
+                    "item_brand": row.coil_item_brand,
+                    "uom": row.coil_item_uom,
+                    "qty": row.coil_item_qty or 0,
+                    "fl_item_gauge": row.fl_item_gauge,
+                    "sum_of_fl_item_qty": row.sum_of_fl_item_qty or 0,
+                    "sum_of_duct_weight": row.sum_of_duct_weight or 0,
+                    "sum_of_duct_area_with_seam": row.sum_of_duct_area_with_seam or 0,
+                    "fl_item_specification": row.fl_item_specification,
+                }
+            else:
+                mat_unique_items[key]["qty"] += row.coil_item_qty or 0
+                mat_unique_items[key]["sum_of_fl_item_qty"] += row.sum_of_fl_item_qty or 0
+                mat_unique_items[key]["sum_of_duct_weight"] += row.sum_of_duct_weight or 0
+                mat_unique_items[key]["sum_of_duct_area_with_seam"] += row.sum_of_duct_area_with_seam or 0
+
+        for value in mat_unique_items.values():
+            doc.append("material_summary", {
+                "parent_finished_good": value["parent_finished_good"],
+                "material_item_code": value["item_code"],
+                "material_item_brand": value["item_brand"],
+                "material_item_uom": value["uom"],
+                "material_item_qty": value["qty"],
+                "fl_item_gauge": value["fl_item_gauge"],
+                "sum_of_fl_item_qty": value["sum_of_fl_item_qty"],
+                "sum_of_duct_weight": value["sum_of_duct_weight"],
+                "sum_of_duct_area_with_seam": value["sum_of_duct_area_with_seam"],
+                "fl_item_specification": value["fl_item_specification"],
+            })
+
+    # =========================================================
+    # 4️⃣ VALIDATION (OPTIMIZED)
+    # =========================================================
+
+    fabrication_fg_set = {row.spl_item_fg_code for row in doc.fabrication_table or []}
+
+    if doc.accessory:
+        for acc in doc.accessory:
+            if acc.parent_finished_good_item not in fabrication_fg_set:
+                frappe.throw(
+                    f"Parent FG {acc.parent_finished_good_item} of Accessory Table is not defined in the Duct Table."
+                )
+
+    if doc.material_list:
+        for mat in doc.material_list:
+            if mat.spl_item_fg_code not in fabrication_fg_set:
+                frappe.throw(
+                    f"Parent FG {mat.spl_item_fg_code} in Raw Materials Table is not defined in the Duct Table."
+                )
+
+    # =========================================================
+    # 5️⃣ FABRICATION LIST TABLE COPY
+    # =========================================================
+
+    if doc.fabrication_table:
+        for row in doc.fabrication_table:
+            doc.append("fabrication_list_table", row.as_dict())
+
+    # =========================================================
+    # 6️⃣ AUTO FOLD
+    # =========================================================
+
+    total_fl_item_qty = 0
+    total_coil_item_qty = 0
+    autofold_unique = {}
+
+    if doc.fabrication_table:
+        # Build lookup once
+        material_lookup = {}
+        for m in doc.material_list or []:
+            material_lookup[m.fl_item] = {
+                "coil_item_qty": m.coil_item_qty or 0,
+                "coil_item_uom": m.coil_item_uom
+            }
+
+        for row in doc.fabrication_table:
+            spec = (row.fl_item_specification or "").strip().lower()
+            angle = float(row.pl_item_length__angle or 0)
+
+            if spec == "straight" and angle in (1220, 1200):
+
+                coil_qty = 0
+                coil_uom = None
+
+                # for m in doc.material_list or []:
+                #     if m.fl_item == row.fl_item:
+                #         coil_qty = m.coil_item_qty or 0
+                #         coil_uom = m.coil_item_uom
+                #         break
+                material_data = material_lookup.get(row.fl_item, {})
+                coil_qty = material_data.get("coil_item_qty", 0)
+                coil_uom = material_data.get("coil_item_uom")
+
+                doc.append("auto_fold_list", {
+                    "fl_item": row.fl_item,
+                    "fl_item_specification": row.fl_item_specification,
+                    "fl_item_gauge": row.fl_item_gauge,
+                    "fl_item_qty": row.fl_item_qty,
+                    "coil_item_qty": coil_qty,
+                    "coil_item_uom": coil_uom,
+                    "pl_item_length__angle": row.pl_item_length__angle,
+                    "duct_range": row.duct_range,
+                })
+
+                key = (
+                    row.fl_item_gauge,
+                    row.pl_item_length__angle,
+                    coil_uom,
+                    row.duct_range,
+                )
+
+                if key not in autofold_unique:
+                    autofold_unique[key] = {
+                        "fl_item_name_description": row.fl_item_specification,
+                        "fl_item_gauge": row.fl_item_gauge,
+                        "fl_item_qty": 0,
+                        "coil_item_qty": 0,
+                        "pl_item_length__angle": row.pl_item_length__angle,
+                        "coil_item_uom": coil_uom,
+                        "duct_range": row.duct_range,
+                    }
+
+                autofold_unique[key]["fl_item_qty"] += row.fl_item_qty or 0
+                autofold_unique[key]["coil_item_qty"] += coil_qty
+
+                total_fl_item_qty += row.fl_item_qty or 0
+                total_coil_item_qty += coil_qty
+
+    for value in autofold_unique.values():
+        doc.append("auto_fold_summary", value)
+
+    doc.total_fl_item_qty = total_fl_item_qty
+    doc.total_coil_item_qty = total_coil_item_qty
+
+    # =========================================================
+    # 7️⃣ NON AUTO FOLD SUMMARY
+    # =========================================================
+
+    non_auto_fold_map = {}
+    total_non_auto_fold_qty = 0
+
+    for row in doc.fabrication_table or []:
+
+        spec = (row.fl_item_specification or "").strip().lower()
+        angle = float(row.pl_item_length__angle or 0)
+
+        if spec == "straight" and angle == 1220:
+            continue
+
+        # key = (row.fl_item_specification, row.duct_range)
+        key = (
+            row.fl_item_specification or "Unknown",
+            row.duct_range or "Unknown"
+        )
+
+        if key not in non_auto_fold_map:
+            non_auto_fold_map[key] = {
+                "fl_item_name_description": row.fl_item_specification,
+                "fl_item_gauge": row.fl_item_gauge,
+                "fl_item_qty": 0,
+                "pl_item_length__angle": row.pl_item_length__angle,
+                "duct_range": row.duct_range,
+                "coil_item_uom": row.coil_item_uom,
+                "coil_item_qty": 0,
+            }
+
+        fl_qty = row.fl_item_qty or 0
+        coil_qty = row.coil_item_qty or 0
+
+        non_auto_fold_map[key]["fl_item_qty"] += fl_qty
+        non_auto_fold_map[key]["coil_item_qty"] += coil_qty
+
+        total_non_auto_fold_qty += fl_qty
+
+    for value in non_auto_fold_map.values():
+        doc.append("non_auto_fold_items", value)
+
+    doc.total_non_auto_fold_items = total_non_auto_fold_qty
