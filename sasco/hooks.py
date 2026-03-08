@@ -13,6 +13,13 @@ fixtures = [
             "module": "Sasco"
         }
     },
+    {
+        "doctype": "Property Setter",
+        "filters": [
+            ["doc_type", "=", "Sales Order"],
+            ["property", "=", "allow_bulk_edit"]
+        ]
+    }
 ]
 
 # Includes in <head>
