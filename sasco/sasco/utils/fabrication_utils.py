@@ -376,15 +376,26 @@ def create_quotation_from_fabrication(fabrication_name, uom=None):
                 "fg_batch_sr": row.fg_batch_sr,
                 "fl_item_qty": 0,
                 "uom": row.spl_item_fg_uom,
+                "spl_area_sqm": 0,
+                "spl_weight_kg": 0,
+                "spl_qty_in_pcs": 0
             },
         )
         unique_codes[key]["fl_item_qty"] += float(row.fl_item_qty or 0)
+        unique_codes[key]["spl_area_sqm"] += float(row.spl_area_sqm or 0)
+        unique_codes[key]["spl_weight_kg"] += float(row.spl_weight_kg or 0)
+        unique_codes[key]["spl_qty_in_pcs"] += float(row.spl_qty_in_pcs or 0)
 
     for item in unique_codes.values():
         _add_item_to_quotation(
             quotation,
             item_code=item["fg_batch_sr"],     # ✅ real Item Code
             qty=item["fl_item_qty"],
+
+            sqm_qty= item["spl_area_sqm"],
+            kg_qty= item["spl_weight_kg"],
+            cam_qty=item["spl_qty_in_pcs"], 
+
             uom=item["uom"],
             extra_fields={"custom_parent_item_1": item["parent_item"]}  # ✅ parent reference
         )
@@ -410,7 +421,7 @@ def create_quotation_from_fabrication(fabrication_name, uom=None):
         _add_item_to_quotation(
             quotation,
             item_code=item["child_finished_good_item"],
-            qty=item["child_finished_good_qty"],
+            qty=item["child_finished_good_qty"],           
             uom=item["child_finished_good_uom"],
             extra_fields={"custom_parent_item_1": item["parent_item"]},
         )
@@ -438,72 +449,16 @@ def create_quotation_from_fabrication(fabrication_name, uom=None):
         )
 
     # Use Accessory Item Summary (acc_item)
-    for row in fabrication.acc_item or []:
-        quotation.append(
-            "custom_parent_item",
-            {
-                "parent_item": row.item_code,
-                "cam_item_qty": row.qty,
-                "spl_area_sqm": 0,                # accessories don’t have sqm
-                "total_kg": 0,                    # accessories don’t have kg
-                "fg_item_uom": row.uom,
-                "quantity": row.qty,
-            },
-        )
-    # # --- 3) Summary → Quotation.custom_parent_item ---
-    # parent_unique_codes = {}
-    # for row in fabrication.fabrication_table:
-    #     key = row.spl_item_fg_code
-    #     parent_unique_codes.setdefault(
-    #         key,
-    #         {
-    #             "parent_item": row.spl_item_fg_code,
-    #             "cam_item_qty": 0,     # always in PCS
-    #             "spl_area_sqm": 0,     # keep raw sqm for reference
-    #             "total_kg": 0,         # keep raw kg for reference
-    #             "quantity": 0,         # unified quantity based on UOM
-    #             "fg_item_uom": uom or row.spl_item_fg_uom,
-    #         },
-    #     )
-
-    #     # accumulate PCS
-    #     parent_unique_codes[key]["cam_item_qty"] += float(row.spl_qty_in_pcs or 0)
-
-    #     # accumulate both raw metrics
-    #     parent_unique_codes[key]["spl_area_sqm"] += float(row.spl_area_sqm or 0)
-    #     parent_unique_codes[key]["total_kg"] += float(row.spl_weight_kg or 0)
-
-    #     # now decide which value goes into `quantity`
-    #     current_uom = uom or row.spl_item_fg_uom
-    #     parent_unique_codes[key]["quantity"] = 100
-    #     if current_uom == "SQM":
-    #         parent_unique_codes[key]["quantity"] = parent_unique_codes[key]["spl_area_sqm"]
-    #     elif current_uom == "KG"::
-    #         parent_unique_codes[key]["quantity"] = parent_unique_codes[key]["total_kg"]
-
-    # for row in fabrication.accessory or []:
-    #     key = row.child_finished_good_item
-    #     parent_unique_codes.setdefault(
-    #         key,
-    #         {
-    #             "parent_item": row.child_finished_good_item,
-    #             "cam_item_qty": 0,
-    #             "spl_area_sqm": float(row.child_finished_good_qty or 0),  # accessories don’t have sqm
-    #             "fg_item_uom": row.child_finished_good_uom,
-    #         },
-    #     )
-    #     parent_unique_codes[key]["cam_item_qty"] += float(row.child_finished_good_qty or 0)
-    #     parent_unique_codes[key]["quantity"] = parent_unique_codes[key]["cam_item_qty"]
-
-    # for item in parent_unique_codes.values():
+    # for row in fabrication.acc_item or []:
     #     quotation.append(
     #         "custom_parent_item",
     #         {
-    #             "parent_item": item["parent_item"],
-    #             "cam_item_qty": item["cam_item_qty"],
-    #             "spl_area_sqm": item["spl_area_sqm"],
-    #             "fg_item_uom": item["fg_item_uom"],
-    #             "quantity": item["quantity"],
+    #             "parent_item": row.item_code,
+    #             "cam_item_qty": row.qty,
+    #             "spl_area_sqm": 0,                # accessories don’t have sqm
+    #             "total_kg": 0,                    # accessories don’t have kg
+    #             "fg_item_uom": row.uom,
+    #             "quantity": row.qty,
     #         },
     #     )
 
@@ -544,7 +499,17 @@ def create_quotation_from_fabrication(fabrication_name, uom=None):
     return quotation.name
 
 
-def _add_item_to_quotation(quotation, item_code,  qty, uom=None, extra_fields=None):
+# def _add_item_to_quotation(quotation, item_code,  qty, uom=None, extra_fields=None):
+def _add_item_to_quotation(
+    quotation,
+    item_code,
+    qty,
+    uom=None,
+    cam_qty=None,
+    sqm_qty=None,
+    kg_qty=None,
+    extra_fields=None
+):
     """Helper to add one Quotation Item with ERPNext defaults + custom fields."""
 
     # Prepare args for ERPNext utility
@@ -567,10 +532,19 @@ def _add_item_to_quotation(quotation, item_code,  qty, uom=None, extra_fields=No
 
     # Append row in Quotation Items
     row = quotation.append("items", {})
-
+    # frappe.log_error(f"adding item : {item_code}", f"""
+    # qty: {qty}
+    # cam qty: {cam_qty}
+    # sqm qty: {sqm_qty}
+    # kg qty: {kg_qty}
+    #                  """)
     # Required fields
     row.item_code = item_code
     row.qty = qty
+    
+    row.custom_cam_quantity = cam_qty
+    row.custom_spl_area_sqm = sqm_qty
+    row.custom_spl_weight_kg = kg_qty 
     row.uom = details.get("uom") or uom
     row.rate = details.get("rate")
     
