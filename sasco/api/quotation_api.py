@@ -31,6 +31,9 @@ def make_sales_order_from_quotation(source_name):
         target.custom_vanes_nos = source.custom_vanes_nos
         target.custom_stiffener = source.custom_stiffener
         target.custom_joint = source.custom_joint
+        target.custom_spl_area_sqm = source.custom_spl_area_sqm
+        target.custom_spl_weight_kg = source.custom_spl_weight_kg
+        target.custom_cam_quantity = source.custom_cam_quantity
 
     doc = get_mapped_doc(
         "Quotation",

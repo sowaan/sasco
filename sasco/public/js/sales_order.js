@@ -148,6 +148,10 @@ async function createDeliveryNote(frm) {
 
             if (so_item) {
                 dn_item.custom_parent_item_1 = so_item.custom_parent_item_1;
+                dn_item.custom_spl_area_sqm = so_item.custom_spl_area_sqm;
+                dn_item.custom_spl_weight_kg = so_item.custom_spl_weight_kg;
+                dn_item.custom_cam_quantity = so_item.custom_cam_quantity;
+
             }
 
             return dn_item;
