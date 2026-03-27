@@ -200,7 +200,8 @@ doc_events = {
 # ------------------------------
 #
 override_whitelisted_methods = {
-	"erpnext.buying.doctype.request_for_quotation.request_for_quotation.create_supplier_quotation": "sasco.overrides.request_for_quotation.create_supplier_quotation"
+	"erpnext.buying.doctype.request_for_quotation.request_for_quotation.create_supplier_quotation": "sasco.overrides.request_for_quotation.create_supplier_quotation",
+    "frappe.desk.doctype.event.event.get_events": "sasco.api.sales_plan.custom_get_events"
 }
 #
 # each overriding function accepts a `data` argument;

@@ -147,10 +147,22 @@ def _sum_main_and_accessory_for_parents(
 
     result = frappe.db.sql(query, params, as_dict=True)
 
+    frappe.log_error(
+        title=f"QUERY AND RESULT {item_code}",
+        message={
+            "parent:": parent_placeholders,
+            "child:": main_child_dt,
+            "query:": query or [],
+            "result:": result or [],
+            "params:": params,
+        },
+    )  
     if not result:
         return _empty_summary()
 
     row = result[0]
+
+ 
     return {
         "quantity_sum": row.get("quantity_sum") or 0,
         "qty": row.get("qty") or 0,
@@ -183,26 +195,26 @@ def get_qs_items(sales_order: str):
     # 1) All Fabrication Lists for this SO (through Estimation Requests)
     fab_lists = _get_fabrication_lists_from_sales_order(sales_order)
 
-    frappe.log_error(
-    title="QS Review | Fabrication Lists",
-    message={
-        "sales_order": sales_order,
-        "fab_lists_count": len(fab_lists or []),
-        "fab_lists": fab_lists,
-    },
-)
+#     frappe.log_error(
+#     title="QS Review | Fabrication Lists",
+#     message={
+#         "sales_order": sales_order,
+#         "fab_lists_count": len(fab_lists or []),
+#         "fab_lists": fab_lists,
+#     },
+# )
 
     # 2) All Manufacture Orders linked to those Fabrication Lists
     mo_names = _get_manufacture_orders_from_fab_lists(fab_lists)
 
-    frappe.log_error(
-        title="QS Review | Manufacture Orders",
-        message={
-            "fab_lists_count": len(fab_lists or []),
-            "mo_count": len(mo_names or []),
-            "mo_names": mo_names,
-        },
-    )
+    # frappe.log_error(
+    #     title="QS Review | Manufacture Orders",
+    #     message={
+    #         "fab_lists_count": len(fab_lists or []),
+    #         "mo_count": len(mo_names or []),
+    #         "mo_names": mo_names,
+    #     },
+    # )
 
     # 3) Base query for QS items (from Fabrication Parent Item)
     items = frappe.db.sql(
@@ -232,24 +244,25 @@ def get_qs_items(sales_order: str):
         as_dict=True,
     )
 
-    frappe.log_error(
-        title="QS Review | Base Items Query",
-        message={
-            "sales_order": sales_order,
-            "items_count": len(items or []),
-            "items": items,
-        },
-    )
+    # frappe.log_error(
+    #     title="QS Review | Base Items Query",
+    #     message={
+    #         "sales_order": sales_order,
+    #         "items_count": len(items or []),
+    #         "items": items,
+    #     },
+    # )
 
     for item in items:
         item_code = item["item_code"]
 
-        for idx, item in enumerate(items):
-            if idx == 0:  # log only first item
-                frappe.log_error(
-                    title="QS Review | First Item Before Aggregation",
-                    message=item,
-                )
+        # for idx, item in enumerate(items):
+        #     if idx == 0:  # log only first item
+        #         frappe.log_error(
+        #             title="QS Review | First Item Before Aggregation",
+        #             message=item,
+        #         )
+
 
         # --- Fabrication List summary per item (sum over all FLs) ---
         if fab_lists:
@@ -269,6 +282,7 @@ def get_qs_items(sales_order: str):
 
         # --- Manufacture Order summary per item (sum over all MOs) ---
         if mo_names:
+         
             mo = _sum_main_and_accessory_for_parents(
                 parentnames=mo_names,
                 item_code=item_code,
@@ -284,11 +298,11 @@ def get_qs_items(sales_order: str):
         item["mo_spl_area_sqm"] = mo["spl_area_sqm"]
         item["mo_spl_weight_kg"] = mo["spl_weight_kg"]
 
-    if items:
-        frappe.log_error(
-            title="QS Review | First Item After Aggregation",
-            message=items[0],
-        )
+    # if items:
+    #     frappe.log_error(
+    #         title="QS Review | First Item After Aggregation",
+    #         message=items[0],
+    #     )
     return items
 
 

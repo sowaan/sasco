@@ -210,7 +210,9 @@ frappe.ui.form.on('Quotation Item', {
             callback: function (r) {
                 let new_rate = (r.message && r.message.price_list_rate) ? r.message.price_list_rate : 0;
 
-                frappe.model.set_value(cdt, cdn, "price_list_rate", new_rate);
+                frappe.after_ajax(() => {
+                    frappe.model.set_value(cdt, cdn, "rate", new_rate);
+                });
                // console.log("💰 Rate updated:", new_rate);
             }
         });

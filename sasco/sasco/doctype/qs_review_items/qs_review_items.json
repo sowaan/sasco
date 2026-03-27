@@ -65,6 +65,7 @@
    "columns": 1,
    "fieldname": "utilized_from_sod",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Utilized From SOD (Nos)",
    "read_only": 1
   },
@@ -72,6 +73,7 @@
    "columns": 1,
    "fieldname": "spl_qty",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "SPL Qty (Nos)",
    "read_only": 1
   },
@@ -79,6 +81,7 @@
    "columns": 1,
    "fieldname": "sod_balance_qty",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "SOD Balance Qty (Nos)",
    "read_only": 1
   },
@@ -94,6 +97,7 @@
    "columns": 1,
    "fieldname": "sod_qty",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "SOD Qty (Nos)",
    "read_only": 1
   },
@@ -157,7 +161,6 @@
    "columns": 1,
    "fieldname": "quantity",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "SOD Qty",
    "read_only": 1
   },
@@ -165,7 +168,6 @@
    "columns": 1,
    "fieldname": "utilized",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Utilized From SOD",
    "read_only": 1
   },
@@ -173,7 +175,6 @@
    "columns": 1,
    "fieldname": "spl",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "SPL Qty",
    "read_only": 1
   },
@@ -181,7 +182,6 @@
    "columns": 1,
    "fieldname": "balance",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "SOD Balance Qty",
    "read_only": 1
   },
@@ -198,7 +198,7 @@
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-12-18 14:53:57.042040",
+ "modified": "2026-03-27 14:21:53.530587",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "QS Review Items",
