@@ -13,33 +13,19 @@ def execute(filters=None):
 
 def get_columns():
     return [
-        # Item Info
-        {"label": "Item Code",      "fieldname": "item_code",             "fieldtype": "Link",     "options": "Item", "width": 160},
-        {"label": "Item Name",      "fieldname": "item_name",             "fieldtype": "Data",                        "width": 220},
-        {"label": "UOM",            "fieldname": "uom",                   "fieldtype": "Link",     "options": "UOM",  "width": 80},
-        {"label": "Rate",           "fieldname": "rate",                  "fieldtype": "Currency",                    "width": 110},
-
-        # SOD (Sales Order Document)
-        {"label": "SOD Qty (Nos)",  "fieldname": "sod_qty",               "fieldtype": "Float",                       "width": 110},
-        {"label": "SOD Qty (SQM)",  "fieldname": "sod_qty_sqm",           "fieldtype": "Float",                       "width": 110},
-        {"label": "SOD Qty (KG)",   "fieldname": "sod_qty_kg",            "fieldtype": "Float",                       "width": 110},
-        {"label": "SOD Amount",     "fieldname": "sod_amount",            "fieldtype": "Currency",                    "width": 120},
-
-        # Fabrication List — SPL
-        {"label": "SPL Qty (Nos)",  "fieldname": "spl_qty",               "fieldtype": "Float",                       "width": 110},
-        {"label": "SPL Qty (SQM)",  "fieldname": "spl_qty_sqm",           "fieldtype": "Float",                       "width": 110},
-        {"label": "SPL Qty (KG)",   "fieldname": "spl_qty_kg",            "fieldtype": "Float",                       "width": 110},
-
-        # Manufacture Order — Utilized
-        {"label": "Utilized (Nos)", "fieldname": "utilized_from_sod",     "fieldtype": "Float",                       "width": 120},
-        {"label": "Utilized (SQM)", "fieldname": "utilized_from_sod_sqm", "fieldtype": "Float",                       "width": 120},
-        {"label": "Utilized (KG)",  "fieldname": "utilized_from_sod_kg",  "fieldtype": "Float",                       "width": 120},
-
-        # Balance
-        {"label": "Balance (Nos)",  "fieldname": "sod_balance_qty",       "fieldtype": "Float",                       "width": 120},
-        {"label": "Balance (SQM)",  "fieldname": "sod_balance_qty_sqm",   "fieldtype": "Float",                       "width": 120},
-        {"label": "Balance (KG)",   "fieldname": "sod_balance_qty_kg",    "fieldtype": "Float",                       "width": 120},
-        {"label": "Balance Amount", "fieldname": "sod_balance_amount",    "fieldtype": "Currency",                    "width": 130},
+        {"label": "Item Code",    "fieldname": "item_code",    "fieldtype": "Link",     "options": "Item", "width": 160},
+        {"label": "Item Name",    "fieldname": "item_name",    "fieldtype": "Data",                        "width": 200},
+        {"label": "Description",  "fieldname": "description",  "fieldtype": "Data",                        "width": 200},
+        {"label": "UOM",          "fieldname": "uom",          "fieldtype": "Link",     "options": "UOM",  "width": 80},
+        {"label": "SOD Qty",      "fieldname": "sod_qty",      "fieldtype": "Float",                       "width": 100},
+        {"label": "Rate",         "fieldname": "rate",         "fieldtype": "Currency",                    "width": 110},
+        {"label": "SOD Amount",   "fieldname": "sod_amount",   "fieldtype": "Currency",                    "width": 120},
+        {"label": "MO Numbers",   "fieldname": "mo_numbers",   "fieldtype": "Data",                        "width": 220},
+        {"label": "Utilized Qty", "fieldname": "utilized_qty", "fieldtype": "Float",                       "width": 110},
+        {"label": "Available Qty","fieldname": "available_qty","fieldtype": "Float",                       "width": 110},
+        {"label": "Default UOM",  "fieldname": "default_uom",  "fieldtype": "Link",     "options": "UOM",  "width": 100},
+        {"label": "Balance Qty",  "fieldname": "balance_qty",  "fieldtype": "Float",                       "width": 110},
+        {"label": "Balance Amount","fieldname": "balance_amount","fieldtype": "Currency",                   "width": 130},
     ]
 
 
@@ -48,25 +34,25 @@ def get_data(filters):
     if not sales_order:
         return []
 
+    company  = frappe.db.get_value("Sales Order", sales_order, "company")
     fab_lists = _get_fabrication_lists_from_sales_order(sales_order)
     mo_names  = _get_manufacture_orders_from_fab_lists(fab_lists)
 
     items = frappe.db.sql(
         """
         SELECT
-            fpi.parent_item           AS item_code,
+            fpi.parent_item  AS item_code,
             i.item_name,
-            fpi.quantity              AS sod_qty,
-            fpi.spl_area_sqm          AS sod_qty_sqm,
-            fpi.total_kg              AS sod_qty_kg,
+            i.description,
+            fpi.fg_item_uom  AS uom,
             fpi.rate,
-            fpi.fg_item_uom           AS uom,
-            fpi.amount                AS sod_amount,
+            fpi.amount       AS sod_amount,
+            i.stock_uom      AS default_uom,
             CASE
                 WHEN fpi.fg_item_uom = 'SQM' THEN fpi.spl_area_sqm
                 WHEN fpi.fg_item_uom = 'KG'  THEN fpi.total_kg
                 ELSE fpi.quantity
-            END AS quantity_sum
+            END AS sod_qty
         FROM `tabFabrication Parent Item` fpi
         INNER JOIN `tabItem` i ON i.name = fpi.parent_item
         WHERE fpi.parent = %s
@@ -77,22 +63,9 @@ def get_data(filters):
     )
 
     for item in items:
-        item_code    = item["item_code"]
-        sod_qty      = item.get("sod_qty")      or 0
-        sod_qty_sqm  = item.get("sod_qty_sqm")  or 0
-        sod_qty_kg   = item.get("sod_qty_kg")   or 0
-        rate         = item.get("rate")          or 0
-        quantity_sum = item.get("quantity_sum")  or 0
-
-        fl = (
-            _sum_main_and_accessory_for_parents(
-                parentnames=fab_lists,
-                item_code=item_code,
-                parenttype="Fabrication List",
-                main_child_dt="Fabrication Item Summary",
-            )
-            if fab_lists else _empty_summary()
-        )
+        item_code = item["item_code"]
+        sod_qty   = item.get("sod_qty") or 0
+        rate      = item.get("rate")    or 0
 
         mo = (
             _sum_main_and_accessory_for_parents(
@@ -104,17 +77,74 @@ def get_data(filters):
             if mo_names else _empty_summary()
         )
 
-        item["spl_qty"]               = fl["qty"]
-        item["spl_qty_sqm"]           = fl["spl_area_sqm"]
-        item["spl_qty_kg"]            = fl["spl_weight_kg"]
+        utilized = mo.get("quantity_sum") or 0
 
-        item["utilized_from_sod"]     = mo["qty"]
-        item["utilized_from_sod_sqm"] = mo["spl_area_sqm"]
-        item["utilized_from_sod_kg"]  = mo["spl_weight_kg"]
-
-        item["sod_balance_qty"]       = sod_qty     - mo["qty"]
-        item["sod_balance_qty_sqm"]   = sod_qty_sqm - mo["spl_area_sqm"]
-        item["sod_balance_qty_kg"]    = sod_qty_kg  - mo["spl_weight_kg"]
-        item["sod_balance_amount"]    = (quantity_sum - (mo.get("quantity_sum") or 0)) * rate
+        item["mo_numbers"]   = _get_mo_numbers_for_item(mo_names, item_code)
+        item["utilized_qty"] = utilized
+        item["available_qty"]= _get_bin_qty(item_code, company)
+        item["balance_qty"]  = sod_qty - (utilized + item["available_qty"])
+        item["balance_amount"] = item["balance_qty"] * rate
 
     return items
+
+
+def _get_mo_numbers_for_item(mo_names, item_code):
+    """Return comma-separated MO names that contain this item (main or accessory)."""
+    if not mo_names:
+        return ""
+
+    ph = ", ".join(["%s"] * len(mo_names))
+    params = list(mo_names) + [item_code] + list(mo_names) + [item_code]
+
+    rows = frappe.db.sql(
+        f"""
+        SELECT DISTINCT parent FROM `tabFabrication Item Summary`
+        WHERE parent IN ({ph}) AND item_code = %s AND parenttype = 'Manufacture Order'
+        UNION
+        SELECT DISTINCT parent FROM `tabAccessory Item Summary`
+        WHERE parent IN ({ph}) AND item_code = %s AND parenttype = 'Manufacture Order'
+        """,
+        params,
+    )
+
+    names = [r[0] for r in rows]
+    return _format_mo_numbers(names)
+
+
+def _format_mo_numbers(names):
+    """If all MO names share the same prefix (up to the last '-'), show the prefix
+    once followed by the suffixes. Otherwise fall back to full names.
+
+    Example: ['MO-M-2026-00001', 'MO-M-2026-00002'] → 'MO-M-2026-00001, 00002'
+    """
+    if not names:
+        return ""
+    if len(names) == 1:
+        return names[0]
+
+    parts   = [n.rsplit("-", 1) for n in names]
+    # rsplit gives [prefix, suffix] only when there is a '-' in the name
+    if any(len(p) != 2 for p in parts):
+        return ", ".join(names)
+
+    prefixes = {p[0] for p in parts}
+    if len(prefixes) == 1:
+        prefix   = parts[0][0]
+        suffixes = [p[1] for p in parts]
+        return f"{prefix}-{', '.join(suffixes)}"
+
+    return ", ".join(names)
+
+
+def _get_bin_qty(item_code, company):
+    """Return total actual_qty from Bin across all warehouses belonging to the company."""
+    result = frappe.db.sql(
+        """
+        SELECT COALESCE(SUM(b.actual_qty), 0)
+        FROM `tabBin` b
+        INNER JOIN `tabWarehouse` w ON w.name = b.warehouse
+        WHERE b.item_code = %s AND w.company = %s
+        """,
+        (item_code, company),
+    )
+    return result[0][0] if result else 0
