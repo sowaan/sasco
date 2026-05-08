@@ -77,6 +77,37 @@ class GatePass(Document):
 			seen.add(row.delivery_note_item)
 
 @frappe.whitelist()
+def get_job_orders_for_sales_order(doctype, txt, searchfield, start, page_len, filters):
+    import json
+    if isinstance(filters, str):
+        filters = json.loads(filters)
+
+    sales_order = (filters or {}).get("sales_order")
+    if not sales_order:
+        return []
+
+    fab_lists = frappe.db.get_all(
+        "Fabrication List",
+        filters={"sales_order": sales_order},
+        pluck="name"
+    )
+    if not fab_lists:
+        return []
+
+    return frappe.db.sql("""
+        SELECT name FROM `tabManufacture Order`
+        WHERE fabrication_list IN %(fab_lists)s
+          AND name LIKE %(txt)s
+        LIMIT %(start)s, %(page_len)s
+    """, {
+        "fab_lists": fab_lists,
+        "txt": f"%{txt}%",
+        "start": int(start),
+        "page_len": int(page_len)
+    })
+
+
+@frappe.whitelist()
 def get_pending_dn_items(
     delivery_note,
     item_code=None,

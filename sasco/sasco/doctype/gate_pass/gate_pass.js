@@ -34,9 +34,11 @@ frappe.ui.form.on("Gate Pass", {
 			);
 		}
         set_delivery_note_filter(frm);
+        set_job_order_filter(frm);
 	},
     onload(frm) {
         set_delivery_note_filter(frm);
+        set_job_order_filter(frm);
     }
 	
 });
@@ -45,6 +47,8 @@ frappe.ui.form.on("Delivery Stops on Gate Pass", {
         let row = locals[cdt][cdn];
         if (!row.delivery_note) return;
 
+        // Clear job_order when delivery note changes since sales_order may change
+        frappe.model.set_value(cdt, cdn, "job_order", null);
         add_dn_items_to_gate_pass(frm, row.delivery_note);
     },
     delivery_details_remove(frm) {
@@ -96,8 +100,18 @@ function set_delivery_note_filter(frm) {
     frm.set_query("delivery_note", "delivery_details", function () {
         return {
             filters: {
-                docstatus: 1   // ✅ Submitted only
+                docstatus: 1
             }
+        };
+    });
+}
+
+function set_job_order_filter(frm) {
+    frm.set_query("job_order", "delivery_details", function (doc, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        return {
+            query: "sasco.sasco.doctype.gate_pass.gate_pass.get_job_orders_for_sales_order",
+            filters: { sales_order: row.sales_order || "" }
         };
     });
 }
