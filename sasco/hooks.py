@@ -19,6 +19,12 @@ fixtures = [
             ["doc_type", "=", "Sales Order"],
             ["property", "=", "allow_bulk_edit"]
         ]
+    },
+    {
+        "doctype": "Client Script",
+        "filters": [
+            ["dt", "=", "Costing Sheet"]
+        ]
     }
 ]
 

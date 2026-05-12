@@ -1,0 +1,142 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-02-10 16:02:02.677982",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "parent_finished_good",
+  "material_item_code",
+  "material_item_brand",
+  "rate",
+  "column_break_yigb",
+  "material_item_uom",
+  "material_item_qty",
+  "sum_of_fl_item_qty",
+  "amount",
+  "section_break_gykm",
+  "fl_item_gauge",
+  "fl_item_specification",
+  "column_break_lofz",
+  "sum_of_duct_weight",
+  "sum_of_duct_area_with_seam"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "parent_finished_good",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Parent Finished Good",
+   "length": 999,
+   "read_only": 1
+  },
+  {
+   "columns": 2,
+   "fieldname": "material_item_code",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Material Item Code",
+   "length": 999,
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "material_item_brand",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Material Item Brand",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_yigb",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "fieldname": "material_item_uom",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Material Item UOM",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "material_item_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Material Item Qty",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "sum_of_fl_item_qty",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Sum of FL Item Qty"
+  },
+  {
+   "fieldname": "section_break_gykm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "columns": 1,
+   "fieldname": "fl_item_gauge",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "FL Item Gauge",
+   "read_only": 1
+  },
+  {
+   "fieldname": "fl_item_specification",
+   "fieldtype": "Data",
+   "label": "CAM Spefication",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_lofz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "columns": 1,
+   "fieldname": "sum_of_duct_weight",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Sum of Duct Weight"
+  },
+  {
+   "columns": 1,
+   "fieldname": "sum_of_duct_area_with_seam",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Sum of Duct Area with seam"
+  },
+  {
+   "fieldname": "rate",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Rate"
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Amount"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2026-05-11 15:35:05.234215",
+ "modified_by": "Administrator",
+ "module": "Sasco",
+ "name": "Material Summary",
+ "owner": "sufyan.sadiq@sowaan.com",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
