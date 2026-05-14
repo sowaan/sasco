@@ -20,6 +20,8 @@ def get_columns():
         {"label": "SOD Qty",      "fieldname": "sod_qty",      "fieldtype": "Float",                       "width": 100},
         {"label": "Rate",         "fieldname": "rate",         "fieldtype": "Currency",                    "width": 110},
         {"label": "SOD Amount",   "fieldname": "sod_amount",   "fieldtype": "Currency",                    "width": 120},
+        {"label": "FL Numbers",   "fieldname": "fl_numbers",   "fieldtype": "Data",                        "width": 220},
+        {"label": "FL Qty",       "fieldname": "fl_qty",       "fieldtype": "Float",                       "width": 110},
         {"label": "MO Numbers",   "fieldname": "mo_numbers",   "fieldtype": "Data",                        "width": 220},
         {"label": "Utilized Qty", "fieldname": "utilized_qty", "fieldtype": "Float",                       "width": 110},
         {"label": "Available Qty","fieldname": "available_qty","fieldtype": "Float",                       "width": 110},
@@ -67,6 +69,19 @@ def get_data(filters):
         sod_qty   = item.get("sod_qty") or 0
         rate      = item.get("rate")    or 0
 
+        fl = (
+            _sum_main_and_accessory_for_parents(
+                parentnames=fab_lists,
+                item_code=item_code,
+                parenttype="Fabrication List",
+                main_child_dt="Fabrication Item Summary",
+            )
+            if fab_lists else _empty_summary()
+        )
+
+        item["fl_numbers"] = _get_fl_numbers_for_item(fab_lists, item_code)
+        item["fl_qty"]     = fl.get("quantity_sum") or 0
+
         mo = (
             _sum_main_and_accessory_for_parents(
                 parentnames=mo_names,
@@ -103,6 +118,29 @@ def _get_mo_numbers_for_item(mo_names, item_code):
         UNION
         SELECT DISTINCT parent FROM `tabAccessory Item Summary`
         WHERE parent IN ({ph}) AND item_code = %s AND parenttype = 'Manufacture Order'
+        """,
+        params,
+    )
+
+    names = [r[0] for r in rows]
+    return _format_mo_numbers(names)
+
+
+def _get_fl_numbers_for_item(fab_lists, item_code):
+    """Return comma-separated Fabrication List names that contain this item (main or accessory)."""
+    if not fab_lists:
+        return ""
+
+    ph = ", ".join(["%s"] * len(fab_lists))
+    params = list(fab_lists) + [item_code] + list(fab_lists) + [item_code]
+
+    rows = frappe.db.sql(
+        f"""
+        SELECT DISTINCT parent FROM `tabFabrication Item Summary`
+        WHERE parent IN ({ph}) AND item_code = %s AND parenttype = 'Fabrication List'
+        UNION
+        SELECT DISTINCT parent FROM `tabAccessory Item Summary`
+        WHERE parent IN ({ph}) AND item_code = %s AND parenttype = 'Fabrication List'
         """,
         params,
     )
