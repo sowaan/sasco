@@ -29,12 +29,12 @@ def _get_fabrication_lists_from_sales_order(sales_order: str) -> list[str]:
     if not est_reqs:
         return []
 
-    # Fabrication Lists linked to those Estimation Requests
+    # Fabrication Lists linked to those Estimation Requests that are submitted
     fab_lists = frappe.get_all(
         "Fabrication List",
         filters={
             "estimation_request": ["in", est_reqs],
-            "workflow_state": ["in", ["Approved"]],
+            "docstatus": 1,
         },
         pluck="name",
     )
@@ -52,15 +52,16 @@ def _get_manufacture_orders_from_fab_lists(fab_lists: list[str]) -> list[str]:
         "Manufacture Order",
         filters={
             "fabrication_list": ["in", fab_lists],
-            "workflow_state": [
-                "in",
-                [
-                    "approved by Production Manager",
-                    "Costing Completed",
-                    "Sent for Costing",
-                    "Submit",
-                ],
-            ],
+            # "workflow_state": [
+            #     "in",
+            #     [
+            #         "approved by Production Manager",
+            #         "Costing Completed",
+            #         "Sent for Costing",
+            #         "Submit",
+            #     ],
+            # ],
+            "docstatus": 1,
         },
         pluck="name",
     )
