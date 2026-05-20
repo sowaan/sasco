@@ -18,8 +18,8 @@ def get_columns():
         {"label": "Description",  "fieldname": "description",  "fieldtype": "Data",                        "width": 200},
         {"label": "UOM",          "fieldname": "uom",          "fieldtype": "Link",     "options": "UOM",  "width": 80},
         {"label": "SOD Qty",      "fieldname": "sod_qty",      "fieldtype": "Float",                       "width": 100},
-        {"label": "Rate",         "fieldname": "rate",         "fieldtype": "Currency",                    "width": 110},
-        {"label": "SOD Amount",   "fieldname": "sod_amount",   "fieldtype": "Currency",                    "width": 120},
+        # {"label": "Rate",         "fieldname": "rate",         "fieldtype": "Currency",                    "width": 110},
+        # {"label": "SOD Amount",   "fieldname": "sod_amount",   "fieldtype": "Currency",                    "width": 120},
         {"label": "FL Numbers",   "fieldname": "fl_numbers",   "fieldtype": "Data",                        "width": 220},
         {"label": "FL Qty",       "fieldname": "fl_qty",       "fieldtype": "Float",                       "width": 110},
         {"label": "MO Numbers",   "fieldname": "mo_numbers",   "fieldtype": "Data",                        "width": 220},
@@ -27,7 +27,7 @@ def get_columns():
         {"label": "Available Qty","fieldname": "available_qty","fieldtype": "Float",                       "width": 110},
         {"label": "Default UOM",  "fieldname": "default_uom",  "fieldtype": "Link",     "options": "UOM",  "width": 100},
         {"label": "Balance Qty",  "fieldname": "balance_qty",  "fieldtype": "Float",                       "width": 110},
-        {"label": "Balance Amount","fieldname": "balance_amount","fieldtype": "Currency",                   "width": 130},
+        # {"label": "Balance Amount","fieldname": "balance_amount","fieldtype": "Currency",                   "width": 130},
     ]
 
 
@@ -68,6 +68,7 @@ def get_data(filters):
         item_code = item["item_code"]
         sod_qty   = item.get("sod_qty") or 0
         rate      = item.get("rate")    or 0
+        fg_uom    = item.get("uom")     or None
 
         fl = (
             _sum_main_and_accessory_for_parents(
@@ -75,6 +76,7 @@ def get_data(filters):
                 item_code=item_code,
                 parenttype="Fabrication List",
                 main_child_dt="Fabrication Item Summary",
+                fg_uom=fg_uom,
             )
             if fab_lists else _empty_summary()
         )
@@ -88,6 +90,7 @@ def get_data(filters):
                 item_code=item_code,
                 parenttype="Manufacture Order",
                 main_child_dt="Fabrication Item Summary",
+                fg_uom=fg_uom,
             )
             if mo_names else _empty_summary()
         )
@@ -97,7 +100,8 @@ def get_data(filters):
         item["mo_numbers"]   = _get_mo_numbers_for_item(mo_names, item_code)
         item["utilized_qty"] = utilized
         item["available_qty"]= _get_bin_qty(item_code, company)
-        item["balance_qty"]  = sod_qty - (utilized + item["available_qty"])
+        fl_qty               = item["fl_qty"]
+        item["balance_qty"]  = sod_qty - fl_qty - item["available_qty"]
         item["balance_amount"] = item["balance_qty"] * rate
 
     return items

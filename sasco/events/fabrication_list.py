@@ -42,7 +42,9 @@ def before_submit(doc, method):
 
 def update_sales_order_if_required(doc):
     """
-    Triggered before Fabrication List submit
+    Triggered before Fabrication List submit.
+    1) Adds line items to SO for BOQ/Unit Rate quotation types.
+    2) Always updates spl_area_sqm and total_kg in SO's custom_parent_item.
     """
 
     if not doc.sales_order:
@@ -50,15 +52,72 @@ def update_sales_order_if_required(doc):
 
     sales_order = frappe.get_doc("Sales Order", doc.sales_order)
 
-    if not sales_order.custom_ref_quotation:
+    if sales_order.custom_ref_quotation:
+        quotation = frappe.get_doc("Quotation", sales_order.custom_ref_quotation)
+        if quotation.custom_inquiry_type in ("BOQ", "Unit Rate"):
+            add_items_to_sales_order(doc, sales_order)
+            # Reload after save inside add_items_to_sales_order
+            sales_order = frappe.get_doc("Sales Order", doc.sales_order)
+
+    _update_parent_item_sqm(doc, sales_order)
+
+
+def _update_parent_item_sqm(fabrication_doc, sales_order):
+    """Recalculate spl_area_sqm and total_kg on SO's custom_parent_item
+    by aggregating from all already-submitted FLs plus the current FL
+    (which is mid-submit and not yet docstatus=1)."""
+
+    # Aggregate from FLs already submitted for this SO
+    existing_fls = frappe.get_all(
+        "Fabrication List",
+        filters={"sales_order": sales_order.name, "docstatus": 1},
+        pluck="name",
+    )
+
+    sqm_map = {}
+
+    if existing_fls:
+        ph = ", ".join(["%s"] * len(existing_fls))
+        rows = frappe.db.sql(
+            f"""
+            SELECT item_code,
+                   SUM(spl_area_sqm) AS total_sqm,
+                   SUM(spl_weight_kg) AS total_kg
+            FROM `tabFabrication Item Summary`
+            WHERE parent IN ({ph}) AND parenttype = 'Fabrication List'
+            GROUP BY item_code
+            """,
+            existing_fls,
+            as_dict=True,
+        )
+        for r in rows:
+            sqm_map[r.item_code] = {"sqm": flt(r.total_sqm), "kg": flt(r.total_kg)}
+
+    # Include current FL being submitted now (not yet docstatus=1)
+    for row in fabrication_doc.duct_and_acc_item or []:
+        entry = sqm_map.setdefault(row.item_code, {"sqm": 0.0, "kg": 0.0})
+        entry["sqm"] += flt(row.spl_area_sqm)
+        entry["kg"] += flt(row.spl_weight_kg)
+
+    if not sqm_map:
         return
 
-    quotation = frappe.get_doc("Quotation", sales_order.custom_ref_quotation)
+    updated = False
+    for row in sales_order.custom_parent_item or []:
+        data = sqm_map.get(row.parent_item)
+        if data:
+            row.spl_area_sqm = data["sqm"]
+            row.total_kg = data["kg"]
+            updated = True
 
-    if quotation.custom_inquiry_type not in ("BOQ", "Unit Rate"):
+    if not updated:
         return
 
-    add_items_to_sales_order(doc, sales_order)
+    if sales_order.docstatus == 1:
+        sales_order.flags.ignore_validate_update_after_submit = True
+
+    sales_order.save(ignore_permissions=True)
+    frappe.db.commit()
 
 def get_total_parent_amount(sales_order):
     total = 0

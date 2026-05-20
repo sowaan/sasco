@@ -83,21 +83,32 @@ def _sum_main_and_accessory_for_parents(
     item_code: str,
     parenttype: str,
     main_child_dt: str,
+    fg_uom: str = None,
 ):
     """Sum quantities for a given item_code across multiple parents (FLs or MOs).
 
-    This aggregates the data from:
-      - main_child_dt (e.g. "Fabrication Item Summary")
-      - "Accessory Item Summary"
-
-    for all given parentnames.
+    fg_uom (the parent item's UOM from the Sales Order) controls which column
+    is used as quantity_ch so FL/MO totals are in the same unit as SOD Qty:
+      'SQM' -> spl_area_sqm
+      'KG'  -> spl_weight_kg
+      other / None -> falls back to the row's own uom-based CASE
     """
 
     if not parentnames:
         return _empty_summary()
 
-    # Build placeholders for IN (%s, %s, ...)
     parent_placeholders = ", ".join(["%s"] * len(parentnames))
+
+    if fg_uom == "SQM":
+        qty_expr = "di.spl_area_sqm"
+    elif fg_uom == "KG":
+        qty_expr = "di.spl_weight_kg"
+    else:
+        qty_expr = """CASE
+                    WHEN di.uom = 'SQM' THEN di.spl_area_sqm
+                    WHEN di.uom = 'KG'  THEN di.spl_weight_kg
+                    ELSE di.qty
+                END"""
 
     query = f"""
         SELECT
@@ -112,11 +123,7 @@ def _sum_main_and_accessory_for_parents(
                 di.spl_area_sqm,
                 di.spl_weight_kg,
                 di.uom,
-                CASE
-                    WHEN di.uom = 'SQM' THEN di.spl_area_sqm
-                    WHEN di.uom = 'KG' THEN di.spl_weight_kg
-                    ELSE di.qty
-                END AS quantity_ch
+                {qty_expr} AS quantity_ch
             FROM `tab{main_child_dt}` di
             WHERE di.parent IN ({parent_placeholders})
               AND di.item_code = %s
@@ -124,7 +131,7 @@ def _sum_main_and_accessory_for_parents(
 
             UNION ALL
 
-            -- Accessories (area & weight forced to 0)
+            -- Accessories (always counted in their own qty)
             SELECT
                 ai.qty,
                 0 AS spl_area_sqm,

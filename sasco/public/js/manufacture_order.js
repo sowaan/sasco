@@ -1514,13 +1514,15 @@ frappe.ui.form.on('Manufacture Order Job Card', {
         // frappe.model.set_value(cdt, cdn, 'time_spent', duration);
 
 
-        let time_diff_in_seconds = moment(cur_date_time).diff(row.start_time, 'seconds', true);
-        frappe.model.set_value(cdt, cdn, 'time_spent', time_diff_in_seconds);
+        // let time_diff_in_seconds = moment(cur_date_time).diff(row.start_time, 'seconds', true);
+        // frappe.model.set_value(cdt, cdn, 'time_spent', time_diff_in_seconds);
 
-        let hours = time_diff_in_seconds / 3600;
-        let operation_cost = hours * flt(row.per_hour_rate || 0);
+        // let hours = time_diff_in_seconds / 3600;
+        // let operation_cost = hours * flt(row.per_hour_rate || 0);
+        // frappe.model.set_value(cdt, cdn, 'operation_cost', operation_cost);
+        let operation_cost = flt(row.qty_in_pcs ||0) * flt(row.per_hour_rate || 0);
         frappe.model.set_value(cdt, cdn, 'operation_cost', operation_cost);
-
+        console.log ("Operation Cost: ", operation_cost);
         frm.refresh_field('items');
     },
 
