@@ -148,7 +148,8 @@ doctype_js = {
 # }
 #open this in future
 override_doctype_class = {
-    "Quotation": "sasco.overrides.quotation.CustomQuotation"
+    "Quotation": "sasco.overrides.quotation.CustomQuotation",
+    "Manufacture Order": "sasco.overrides.manufacture_order.CustomManufactureOrder"
 }
 # Document Events
 # ---------------

@@ -1,4 +1,3 @@
-from erpnext.manufacturing.doctype.manufacture_order.manufacture_order import ManufactureOrder
 import frappe
 from frappe.model.document import Document
 
@@ -6,13 +5,9 @@ def n(val):
     return float(val or 0)
 
 
-class CustomManufactureOrder(ManufactureOrder):
+class CustomManufactureOrder(Document):
 
     def validate(self):
-        # Call standard ERPNext validation first
-        super().validate()
-
-        # Your custom costing logic
         self.calculate_custom_costing()
 
     def calculate_custom_costing(self):
@@ -197,7 +192,7 @@ class CustomManufactureOrder(ManufactureOrder):
 
         for row in self.job_card or []:
             if row.start and row.end:
-                row.operation_cost = n(row.time_spent) * (n(row.per_hour_rate) / 3600)
+                row.operation_cost = n(row.qty_in_pcs) * n(row.per_hour_rate)
                 total_time += n(row.time_spent)
                 total_cost += row.operation_cost
 
