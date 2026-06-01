@@ -308,7 +308,6 @@ if doc.item_table :
 
 
 doc.total_fabrication_cost = total_fab_cost
-doc.total_operation_cost_ = total_fab_cost
 doc.total_fg_item_amount = total_grand_cost
 doc.total_fg_item_amount_ = total_grand_cost
 
@@ -341,7 +340,7 @@ if doc.job_card :
 
         if row.start == 1 and row.end == 1 :
 
-            row.operation_cost = (row.time_spent or 0) * ((row.per_hour_rate or 0) / 3600)
+            row.operation_cost = (row.qty_in_pcs or 0) * (row.per_hour_rate or 0)
 
 
             total_time_spent = total_time_spent + (row.time_spent or 0)
@@ -351,7 +350,7 @@ if doc.job_card :
 
 doc.total_time_spent = total_time_spent
 doc.total_operation_cost = total_opr_cost
-# doc.total_operation_cost_ = total_opr_cost
+doc.total_operation_cost_ = total_opr_cost
 ############################################# JOB CARD #############################################
 
 
