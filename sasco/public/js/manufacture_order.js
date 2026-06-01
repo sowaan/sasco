@@ -1,4 +1,4 @@
-frappe.ui.form.on('Manufacture Order', {
+qfrappe.ui.form.on('Manufacture Order', {
     fabrication_process: async function (frm) {
         const proc_name = frm.doc.fabrication_process;
         // console.log('Selected Manufacturing Process:', proc_name);
