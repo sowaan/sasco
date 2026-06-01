@@ -5,4 +5,4 @@
 [post_model_sync]
 # Patches added in this section will be executed after doctypes are migrated
 sasco.patches.fix_fabrication_parent_item_sqm
-sasco.patches.fix_job_card_operation_cost_none
+sasco.patches.fix_get_sales_order_item_none_guards
