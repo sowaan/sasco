@@ -1,4 +1,4 @@
-qfrappe.ui.form.on('Manufacture Order', {
+frappe.ui.form.on('Manufacture Order', {
     fabrication_process: async function (frm) {
         const proc_name = frm.doc.fabrication_process;
         // console.log('Selected Manufacturing Process:', proc_name);
@@ -1493,37 +1493,25 @@ frappe.ui.form.on('Manufacture Order Job Card', {
 
     start: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        let cur_date_time = frappe.datetime.now_datetime(); // Corrected method
+        let cur_date_time = frappe.datetime.now_datetime();
 
         frappe.model.set_value(cdt, cdn, 'start_time', cur_date_time);
         frappe.model.set_value(cdt, cdn, 'status', 'Start');
 
-        frm.refresh_field('items');
+        frm.refresh_field('job_card');
     },
 
     end: function (frm, cdt, cdn) {
         let row = locals[cdt][cdn];
-        let cur_date_time = frappe.datetime.now_datetime(); // Corrected method
+        let cur_date_time = frappe.datetime.now_datetime();
 
         frappe.model.set_value(cdt, cdn, 'end_time', cur_date_time);
         frappe.model.set_value(cdt, cdn, 'status', 'Close');
 
-        frm.refresh_field('items');
-
-        // let duration = frappe.datetime.get_hour_diff(cur_date_time, row.start_time);
-        // frappe.model.set_value(cdt, cdn, 'time_spent', duration);
-
-
-        // let time_diff_in_seconds = moment(cur_date_time).diff(row.start_time, 'seconds', true);
-        // frappe.model.set_value(cdt, cdn, 'time_spent', time_diff_in_seconds);
-
-        // let hours = time_diff_in_seconds / 3600;
-        // let operation_cost = hours * flt(row.per_hour_rate || 0);
-        // frappe.model.set_value(cdt, cdn, 'operation_cost', operation_cost);
-        let operation_cost = flt(row.qty_in_pcs ||0) * flt(row.per_hour_rate || 0);
+        let operation_cost = flt(row.qty_in_pcs || 0) * flt(row.per_hour_rate || 0);
         frappe.model.set_value(cdt, cdn, 'operation_cost', operation_cost);
-        console.log ("Operation Cost: ", operation_cost);
-        frm.refresh_field('items');
+
+        frm.refresh_field('job_card');
     },
 
 

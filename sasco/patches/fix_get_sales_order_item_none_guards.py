@@ -410,11 +410,16 @@ if doc.duct_and_acc_item :
 """
 
 
-# Targeted fixes for "Job Card Update" — same None-guard pattern.
+# Targeted fixes for "Job Card Update" — qty_in_pcs formula, None-guards, uncomment total_operation_cost_.
 JOB_CARD_UPDATE_FIXES = [
+    # Switch from time-based to qty_in_pcs-based (matches JS and Get Sales Order Item).
     (
         "row.operation_cost = row.time_spent * (row.per_hour_rate / 3600)",
+        "row.operation_cost = (row.qty_in_pcs or 0) * (row.per_hour_rate or 0)",
+    ),
+    (
         "row.operation_cost = (row.time_spent or 0) * ((row.per_hour_rate or 0) / 3600)",
+        "row.operation_cost = (row.qty_in_pcs or 0) * (row.per_hour_rate or 0)",
     ),
     (
         "total_time_spent = total_time_spent + row.time_spent",
@@ -431,6 +436,11 @@ JOB_CARD_UPDATE_FIXES = [
     (
         "doc.total_over_head_cost_ = doc.grand_total * (doc.additional_over_head_cost_percentage/100)",
         "doc.total_over_head_cost_ = (doc.grand_total or 0) * ((doc.additional_over_head_cost_percentage or 0)/100)",
+    ),
+    # Uncomment so grand_total uses actual job-card operation cost on every save.
+    (
+        "# doc.total_operation_cost_ = total_opr_cost",
+        "doc.total_operation_cost_ = total_opr_cost",
     ),
 ]
 
