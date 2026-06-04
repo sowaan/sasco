@@ -48,8 +48,13 @@ class CustomManufactureOrder(Document):
 
             row.costing_rate = rate
             row.coil_item_max_qty = qty + (qty * self.tol / 100)
-            row.coil_item_remaining_qty = row.coil_item_max_qty
-            row.coil_item_used_qty = 0
+
+            # Only initialise tracking fields when no consumption has been recorded yet.
+            # Once material is consumed (used_qty > 0), preserving remaining_qty is critical
+            # because validate running on every save would otherwise destroy actual usage data.
+            if not n(row.coil_item_used_qty):
+                row.coil_item_remaining_qty = row.coil_item_max_qty
+                row.coil_item_used_qty = 0
 
             total_qty += qty
             total_cost += rate * qty
@@ -69,12 +74,16 @@ class CustomManufactureOrder(Document):
 
             row.amount = qty * rate
             row.max_qty = qty + (qty * self.tol / 100)
-            row.remaining_qty = row.max_qty
-            row.used_qty = 0
+
+            # Preserve tracking data once consumption has started
+            if not n(row.used_qty):
+                row.remaining_qty = row.max_qty
+                row.used_qty = 0
 
             row.se_max_qty = row.max_qty
-            row.se_remaining_qty = row.se_max_qty
-            row.se_used_qty = 0
+            if not n(row.se_used_qty):
+                row.se_remaining_qty = row.se_max_qty
+                row.se_used_qty = 0
 
     # ---------------------------------------------------------------------
     # ACCESSORY SUMMARY WITH FG BATCH
@@ -137,8 +146,11 @@ class CustomManufactureOrder(Document):
 
             row.amount = qty * rate
             row.max_quantity = qty + (qty * self.tol / 100)
-            row.remaining_quantity = row.max_quantity
-            row.used_quantity = 0
+
+            # Preserve tracking data once consumption has started
+            if not n(row.used_quantity):
+                row.remaining_quantity = row.max_quantity
+                row.used_quantity = 0
 
             total_qty += qty
             total_cost += row.amount
@@ -192,9 +204,13 @@ class CustomManufactureOrder(Document):
 
         for row in self.job_card or []:
             if row.start and row.end:
-                row.operation_cost = n(row.qty_in_pcs) * n(row.per_hour_rate)
+                # qty_in_pcs has allow_on_submit=0, so on submitted docs its value may not
+                # be writable via Update save. Only recalculate when qty_in_pcs is available;
+                # otherwise preserve the operation_cost already set by the client (End event).
+                if n(row.qty_in_pcs):
+                    row.operation_cost = n(row.qty_in_pcs) * n(row.per_hour_rate)
                 total_time += n(row.time_spent)
-                total_cost += row.operation_cost
+                total_cost += n(row.operation_cost)
 
         self.total_time_spent = total_time
         self.total_operation_cost = total_cost
