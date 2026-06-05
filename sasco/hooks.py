@@ -25,6 +25,12 @@ fixtures = [
         "filters": [
             ["dt", "=", "Costing Sheet"]
         ]
+    },
+    {
+        "doctype": "Server Script",
+        "filters": [
+            ["name", "in", ["Get Sales Order Item"]]
+        ]
     }
 ]
 
