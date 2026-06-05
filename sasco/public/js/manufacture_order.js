@@ -585,132 +585,64 @@ frappe.ui.form.on('Manufacture Order', {
                             }
                         }
 
-
                         if (selected_items.length > 0) {
 
-                            frappe.new_doc("Stock Entry", { "stock_entry_type": "Material Consumption for Manufacture" }, doc => {
+                            let item_codes = [...new Set(selected_items.map(i => i.item_code))];
 
-                                doc.company = frm.doc.company;
-                                doc.posting_date = frappe.datetime.get_today();
-                                doc.custom_manufacture_order = frm.doc.name;
-                                doc.custom_manufacture_order_purpose = "Material Consumption";
-                                // doc.from_warehouse = "Consumables WH - M" ;
-                                doc.items = [];
+                            frappe.call({
+                                method: 'frappe.client.get_list',
+                                args: {
+                                    doctype: 'Item',
+                                    filters: [['name', 'in', item_codes]],
+                                    fields: ['name', 'stock_uom'],
+                                    limit: item_codes.length,
+                                },
+                                callback: function(res) {
+                                    let stock_uom_map = {};
+                                    (res.message || []).forEach(i => { stock_uom_map[i.name] = i.stock_uom; });
 
-                                selected_items.forEach(item => {
+                                    frappe.new_doc("Stock Entry", { "stock_entry_type": "Material Consumption for Manufacture" }, doc => {
 
-                                    frappe.db.set_value('Item', item.item_code, 'valuation_rate', item.rate);
+                                        doc.company = frm.doc.company;
+                                        doc.posting_date = frappe.datetime.get_today();
+                                        doc.custom_manufacture_order = frm.doc.name;
+                                        doc.custom_manufacture_order_purpose = "Material Consumption";
+                                        frappe.model.clear_table(doc, "items");
+                                        frappe.model.clear_table(doc, "custom_raw_material");
 
-                                    let row = frappe.model.add_child(doc, "items");
-                                    frappe.model.set_value(row.doctype, row.name, 'item_code', item.item_code);
-                                    frappe.model.set_value(row.doctype, row.name, 'item_name', item.item_code);
-                                    frappe.model.set_value(row.doctype, row.name, 'qty', item.selected_qty);
-                                    frappe.model.set_value(row.doctype, row.name, 'uom', item.uom);
-                                    frappe.model.set_value(row.doctype, row.name, 'custom_finished_goods_item', item.fg_item_code);
-                                    frappe.model.set_value(row.doctype, row.name, 'custom_parent_finished_goods_item', item.parent_fg_item_code);
+                                        selected_items.forEach(item => {
+                                            let stock_uom = stock_uom_map[item.item_code] || item.uom;
+                                            let conversion_factor = (item.uom === stock_uom) ? 1 : 1;
 
-                                    frappe.model.set_value(row.doctype, row.name, 'basic_rate', item.rate);
-                                    frappe.model.set_value(row.doctype, row.name, 'valuation_rate', item.rate);
+                                            let row = frappe.model.add_child(doc, "items");
+                                            let r = locals[row.doctype][row.name];
+                                            r.item_code = item.item_code;
+                                            r.item_name = item.item_name || item.item_code;
+                                            r.qty = item.selected_qty;
+                                            r.uom = item.uom;
+                                            r.stock_uom = stock_uom;
+                                            r.conversion_factor = conversion_factor;
+                                            r.transfer_qty = item.selected_qty * conversion_factor;
+                                            r.s_warehouse = "Work In Progress - SI";
+                                            r.basic_rate = item.rate || 0;
+                                            r.valuation_rate = item.rate || 0;
+                                            r.custom_manufacture_order_rate = item.rate || 0;
+                                            r.custom_raw_material = item.rm_check;
+                                            r.custom_accessory_item = item.ass_check;
+                                            r.custom_consumable_item = item.cons_check;
+                                            r.manufacture_order = frm.doc.name;
 
-
-                                    frappe.model.set_value(row.doctype, row.name, 'custom_manufacture_order_rate', item.rate);
-
-
-
-                                    frappe.model.set_value(row.doctype, row.name, 'custom_raw_material', item.rm_check);
-                                    frappe.model.set_value(row.doctype, row.name, 'custom_accessory_item', item.ass_check);
-                                    frappe.model.set_value(row.doctype, row.name, 'custom_consumable_item', item.cons_check);
-
-                                    frappe.model.set_value(row.doctype, row.name, 'manufacture_order', frm.doc.name);
-
-
-
-                                    if (row.item_code) {
-
-                                        var ars = {
-                                            item_code: row.item_code,
-                                            item_name: row.item_name,
-                                            warehouse: cstr(row.s_warehouse) || cstr(row.t_warehouse),
-                                            transfer_qty: row.transfer_qty,
-                                            serial_no: row.serial_no,
-                                            batch_no: row.batch_no,
-                                            bom_no: row.bom_no,
-                                            expense_account: row.expense_account,
-                                            cost_center: row.cost_center,
-                                            company: doc.company,
-                                            qty: item.qty,
-                                            voucher_type: doc.doctype,
-                                            voucher_no: row.name,
-                                            allow_zero_valuation: 1,
-                                        };
-
-                                        frappe.call({
-                                            doc: doc,
-                                            method: "get_item_details",
-                                            args: ars,
-                                            callback: function (r) {
-                                                if (r.message) {
-                                                    var d = locals[cdt][cdn];
-                                                    $.each(r.message, function (k, v) {
-                                                        if (v) {
-                                                            // set_value trigger barcode function and barcode set qty to 1 in stock_controller.js, to avoid this set value manually instead of set value.
-                                                            if (k != "barcode") {
-                                                                frappe.model.set_value(cdt, cdn, k, v); // qty and it's subsequent fields weren't triggered
-                                                            } else {
-                                                                d.barcode = v;
-                                                            }
-                                                        }
-                                                    });
-                                                    refresh_field("items");
-
-                                                    let no_batch_serial_number_value = false;
-                                                    if (d.has_serial_no || d.has_batch_no) {
-                                                        no_batch_serial_number_value = true;
-                                                    }
-
-                                                    if (
-                                                        no_batch_serial_number_value &&
-                                                        !frappe.flags.hide_serial_batch_dialog &&
-                                                        !frappe.flags.dialog_set
-                                                    ) {
-                                                        frappe.flags.dialog_set = true;
-                                                        erpnext.stock.select_batch_and_serial_no(frm, d);
-                                                    } else {
-                                                        frappe.flags.dialog_set = false;
-                                                    }
-                                                }
-                                            },
+                                            let rm_row = frappe.model.add_child(doc, "custom_raw_material");
+                                            let rm_r = locals[rm_row.doctype][rm_row.name];
+                                            rm_r.raw_material_item = item.item_code;
+                                            rm_r.incoming_quantity = item.selected_qty;
                                         });
 
-
-
-                                    }
-
-
-
-
-
-
-
-
-                                    let rm_row = frappe.model.add_child(doc, "custom_raw_material");
-                                    frappe.model.set_value("Raw Material Item In Stock Entry", rm_row.name, 'raw_material_item', item.item_code);
-                                    frappe.model.set_value("Raw Material Item In Stock Entry", rm_row.name, 'finished_goods_item', item.fg_item_code);
-                                    frappe.model.set_value("Raw Material Item In Stock Entry", rm_row.name, 'incoming_quantity', item.selected_qty);
-
-                                    refresh_field("custom_raw_material");
-
-                                    // rm_row.raw_material_item = item.item_code ;
-                                    // rm_row.finished_goods_item = item.fg_item_code ;
-                                    // rm_row.incoming_quantity = item.selected_qty ; 
-
-
-                                });
-
+                                    });
+                                }
                             });
 
-                        }
-                        else {
+                        } else {
                             frappe.msgprint("Please select at least one item.");
                         }
 
@@ -724,62 +656,74 @@ frappe.ui.form.on('Manufacture Order', {
 
                 let dummyData = [];
 
-
-                (frm.doc.raw_material_item || []).forEach(row => {
-                    dummyData.push({
-                        item_code: row.coil_item_code_rm,
-                        item_name: row.coil_item_code_rm,
-                        qty: row.coil_item_qty,
-                        used_qty: row.coil_item_used_qty,
-                        rem_qty: row.coil_item_remaining_qty,
-                        selected_qty: row.coil_item_remaining_qty,
-                        rate: row.costing_rate,
-                        uom: row.coil_item_uom,
-                        fg_item_code: row.fl_item,
-                        parent_fg_item_code: row.spl_item_fg_code,
-                        rm_check: 1,
-                        ass_check: 0,
-                        cons_check: 0,
+                function aggregateMC(rows) {
+                    let map = {};
+                    rows.forEach(r => {
+                        let key = `${r.item_code}||${r.rm_check}||${r.ass_check}||${r.cons_check}`;
+                        if (!map[key]) {
+                            map[key] = { ...r };
+                        } else {
+                            map[key].qty = (map[key].qty || 0) + (r.qty || 0);
+                            map[key].used_qty = (map[key].used_qty || 0) + (r.used_qty || 0);
+                            map[key].rem_qty = (map[key].rem_qty || 0) + (r.rem_qty || 0);
+                            map[key].selected_qty = (map[key].selected_qty || 0) + (r.selected_qty || 0);
+                        }
                     });
-                });
+                    return Object.values(map);
+                }
 
-                (frm.doc.accessory_summary || []).forEach(row => {
-                    dummyData.push({
-                        item_code: row.item_code_linked,
-                        item_name: row.item_name,
-                        qty: row.qty,
-                        used_qty: row.se_used_qty,
-                        rem_qty: row.se_remaining_qty,
-                        selected_qty: row.se_remaining_qty,
-                        uom: row.uom,
-                        rate: row.rate,
-                        fg_item_code: null,
-                        parent_fg_item_code: null,
-                        rm_check: 0,
-                        ass_check: 1,
-                        cons_check: 0,
-                    });
-                });
+                let rmRows = (frm.doc.raw_material_item || []).map(row => ({
+                    item_code: row.coil_item_code_rm,
+                    item_name: row.coil_item_code_rm,
+                    qty: row.coil_item_qty,
+                    used_qty: row.coil_item_used_qty,
+                    rem_qty: row.coil_item_remaining_qty,
+                    selected_qty: row.coil_item_remaining_qty,
+                    rate: row.costing_rate,
+                    uom: row.coil_item_uom,
+                    fg_item_code: row.fl_item,
+                    parent_fg_item_code: row.spl_item_fg_code,
+                    rm_check: 1,
+                    ass_check: 0,
+                    cons_check: 0,
+                }));
 
-                (frm.doc.consumable_cost || []).forEach(row => {
-                    dummyData.push({
-                        item_code: row.item,
-                        item_name: row.item_name,
-                        qty: row.quantity,
-                        uom: row.uom,
-                        used_qty: row.se_used_quantity,
-                        rem_qty: row.se_remaining_quantity,
-                        selected_qty: row.se_remaining_quantity,
-                        rate: row.rate,
-                        fg_item_code: null,
-                        parent_fg_item_code: null,
-                        rm_check: 0,
-                        ass_check: 0,
-                        cons_check: 1,
-                    });
-                });
+                let accRows = (frm.doc.accessory_summary || []).map(row => ({
+                    item_code: row.item_code_linked,
+                    item_name: row.item_name,
+                    qty: row.qty,
+                    used_qty: row.se_used_qty,
+                    rem_qty: row.se_remaining_qty,
+                    selected_qty: row.se_remaining_qty,
+                    uom: row.uom,
+                    rate: row.rate,
+                    fg_item_code: null,
+                    parent_fg_item_code: null,
+                    rm_check: 0,
+                    ass_check: 1,
+                    cons_check: 0,
+                }));
 
-                dialog.fields_dict.item_table.df.data = dummyData;
+                let consRows = (frm.doc.consumable_cost || []).map(row => ({
+                    item_code: row.item,
+                    item_name: row.item_name,
+                    qty: row.quantity,
+                    uom: row.uom,
+                    used_qty: row.se_used_quantity,
+                    rem_qty: row.se_remaining_quantity,
+                    selected_qty: row.se_remaining_quantity,
+                    rate: row.rate,
+                    fg_item_code: null,
+                    parent_fg_item_code: null,
+                    rm_check: 0,
+                    ass_check: 0,
+                    cons_check: 1,
+                }));
+
+                dummyData = [...aggregateMC(rmRows), ...aggregateMC(accRows), ...aggregateMC(consRows)]
+                    .filter(r => (r.rem_qty || 0) > 0);
+
+                                dialog.fields_dict.item_table.df.data = dummyData;
                 dialog.fields_dict.item_table.refresh();
 
                 dialog.show();
