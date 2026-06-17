@@ -31,7 +31,7 @@
    "options": "Item"
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "fg_item_uom",
    "fieldtype": "Link",
    "in_list_view": 1,
@@ -39,8 +39,10 @@
    "options": "UOM"
   },
   {
+   "columns": 1,
    "fieldname": "spl_area_sqm",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Total SPL Area SQM",
    "read_only": 1
   },
@@ -48,7 +50,6 @@
    "default": "0",
    "fieldname": "selected_spl_area_sqm",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Selected SPL Area SQM",
    "no_copy": 1,
    "read_only": 1
@@ -61,7 +62,6 @@
    "default": "0",
    "fieldname": "cam_item_qty",
    "fieldtype": "Float",
-   "in_list_view": 1,
    "label": "Total CAM Item QTY",
    "read_only": 1
   },
@@ -99,7 +99,7 @@
    "read_only": 1
   },
   {
-   "columns": 2,
+   "columns": 1,
    "fieldname": "amount",
    "fieldtype": "Float",
    "in_list_view": 1,
@@ -107,8 +107,10 @@
    "read_only": 1
   },
   {
+   "columns": 1,
    "fieldname": "total_kg",
    "fieldtype": "Float",
+   "in_list_view": 1,
    "label": "Total KG",
    "precision": "0",
    "read_only": 1
@@ -117,7 +119,6 @@
    "columns": 2,
    "fieldname": "price_list",
    "fieldtype": "Link",
-   "in_list_view": 1,
    "label": "Price List",
    "options": "Price List"
   },

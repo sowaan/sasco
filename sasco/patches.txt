@@ -9,3 +9,4 @@ sasco.patches.fix_get_sales_order_item_none_guards
 sasco.patches.fix_qty_in_pcs_readonly
 sasco.patches.fix_qty_in_pcs_allow_on_submit
 sasco.patches.fix_server_script_tracking_resets
+sasco.patches.disable_fabrication_filter_db_scripts
