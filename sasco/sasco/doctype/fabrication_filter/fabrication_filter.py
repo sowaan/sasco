@@ -27,7 +27,20 @@ class FabricationFilter(Document):
 		Order is selected) is preserved as-is; everything derived from it is
 		recomputed here so the saved document is always consistent.
 		"""
-		fab_names = [r.fabrication for r in (self.filtered_fabrication_list or []) if r.fabrication]
+		# Drop duplicate / empty Fabrication List rows so a list added twice is
+		# not aggregated twice. The table is rebuilt with the unique rows so the
+		# saved document matches the totals.
+		seen = set()
+		unique_rows = []
+		for row in (self.filtered_fabrication_list or []):
+			if row.fabrication and row.fabrication not in seen:
+				seen.add(row.fabrication)
+				unique_rows.append(row)
+
+		if len(unique_rows) != len(self.filtered_fabrication_list or []):
+			self.filtered_fabrication_list = unique_rows
+
+		fab_names = [r.fabrication for r in unique_rows]
 
 		items, parents = _aggregate(fab_names)
 		if self.sales_order:
