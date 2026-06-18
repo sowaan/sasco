@@ -106,17 +106,46 @@ def _aggregate(fab_names):
 
 
 def _apply_so_rates(parents, sales_order):
-	"""Fill rate/amount on parent rows from matching Sales Order Item rates."""
-	so_items = frappe.get_all(
-		"Sales Order Item",
-		filters={"parent": sales_order},
-		fields=["item_code", "rate"],
+	"""Fill rate/amount on parent rows from the Sales Order's custom_parent_item grid.
+
+	Rate is picked from the matching parent row in Sales Order.custom_parent_item
+	(matched by parent_item, preferring the same FG UOM). The amount is then driven
+	by the UOM:
+	    KG  -> rate * total_kg
+	    SQM -> rate * spl_area_sqm
+	    else (PCS / Nos / Qty) -> rate * quantity
+	"""
+	so_parents = frappe.get_all(
+		"Fabrication Parent Item",
+		filters={"parent": sales_order, "parenttype": "Sales Order"},
+		fields=["parent_item", "fg_item_uom", "rate"],
 	)
-	rate_map = {r.item_code: flt(r.rate) for r in so_items}
+
+	# Index rates: (parent_item, uom) for an exact match, parent_item alone as fallback.
+	rate_by_item_uom = {}
+	rate_by_item = {}
+	for r in so_parents:
+		rate_by_item_uom[(r.parent_item, r.fg_item_uom)] = flt(r.rate)
+		rate_by_item.setdefault(r.parent_item, flt(r.rate))
+
 	for p in parents:
-		if p["parent_item"] in rate_map:
-			p["rate"] = rate_map[p["parent_item"]]
-			p["amount"] = p["rate"] * flt(p["quantity"])
+		uom = p.get("fg_item_uom")
+		rate = rate_by_item_uom.get((p["parent_item"], uom))
+		if rate is None:
+			rate = rate_by_item.get(p["parent_item"])
+		if rate is None:
+			continue
+
+		uom_key = (uom or "").upper()
+		if uom_key == "KG":
+			qty = flt(p["total_kg"])
+		elif uom_key == "SQM":
+			qty = flt(p["spl_area_sqm"])
+		else:
+			qty = flt(p["quantity"])
+
+		p["rate"] = rate
+		p["amount"] = rate * qty
 
 
 def _compute_taxes(net_total, taxes_and_charges):
