@@ -15,8 +15,6 @@
   "section_break_hcsb",
   "filtered_fabrication_list",
   "amended_from",
-  "section_break_khom",
-  "fabrication_filter_items",
   "section_break_sgrq",
   "parent_item",
   "totals_section",
@@ -25,7 +23,9 @@
   "tax_amount",
   "grand_total",
   "terms_section",
-  "terms_and_conditions"
+  "terms_and_conditions",
+  "section_break_khom",
+  "fabrication_filter_items"
  ],
  "fields": [
   {
@@ -166,7 +166,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-17 15:53:02.081943",
+ "modified": "2026-06-18 14:11:34.522828",
  "modified_by": "Administrator",
  "module": "Sasco",
  "name": "Fabrication Filter",

@@ -110,6 +110,67 @@ frappe.ui.form.on('Fabrication Filter', {
 });
 
 
+// Child-table events. Add/remove triggers fire against the child doctype, so
+// both the field change and the *_remove handler must live in this block.
+frappe.ui.form.on('Filtered Fabrication list', {
+    // User picked a Fabrication List in a manually added row.
+    // (job_number, customer, etc. auto-fetch via fetch_from on the child doctype.)
+    fabrication: function (frm, cdt, cdn) {
+        let row = locals[cdt][cdn];
+        if (!row.fabrication) return;
+        recompute_from_fabrication_lists(frm);
+    },
+
+    // User removed a Fabrication List row: reload everything derived from the
+    // remaining rows.
+    filtered_fabrication_list_remove: function (frm) {
+        recompute_from_fabrication_lists(frm);
+    }
+});
+
+
+// Reload items, parent items and totals from whatever Fabrication Lists are
+// currently in filtered_fabrication_list (used for manual add/remove).
+function recompute_from_fabrication_lists(frm) {
+    let fab_names = (frm.doc.filtered_fabrication_list || [])
+        .map(r => r.fabrication)
+        .filter(Boolean);
+
+    if (!fab_names.length) {
+        frm.clear_table('fabrication_filter_items');
+        frm.clear_table('parent_item');
+        frm.refresh_field('fabrication_filter_items');
+        frm.refresh_field('parent_item');
+        frm.set_value('net_total', 0);
+        frm.set_value('tax_amount', 0);
+        frm.set_value('grand_total', 0);
+        return;
+    }
+
+    frappe.call({
+        method: "sasco.sasco.doctype.fabrication_filter.fabrication_filter.reload_from_fabrication_lists",
+        args: {
+            fabrication_names: fab_names,
+            sales_order: frm.doc.sales_order || null,
+            taxes_and_charges: frm.doc.taxes_and_charges || null
+        },
+        freeze: true,
+        freeze_message: __("Loading fabrication records..."),
+        callback: function (r) {
+            if (r.exc || !r.message) return;
+            let data = r.message;
+
+            fill_table(frm, 'fabrication_filter_items', data.fabrication_filter_items);
+            fill_table(frm, 'parent_item', data.parent_item);
+
+            frm.set_value('net_total', data.net_total || 0);
+            frm.set_value('tax_amount', data.tax_amount || 0);
+            frm.set_value('grand_total', data.grand_total || 0);
+        }
+    });
+}
+
+
 // Replace a child table with the given rows and refresh it.
 function fill_table(frm, fieldname, rows) {
     frm.clear_table(fieldname);

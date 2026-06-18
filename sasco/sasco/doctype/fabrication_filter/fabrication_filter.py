@@ -162,6 +162,42 @@ def _compute_taxes(net_total, taxes_and_charges):
 
 
 @frappe.whitelist()
+def reload_from_fabrication_lists(fabrication_names, sales_order=None, taxes_and_charges=None):
+	"""Recompute items, parent items and totals for an explicit set of
+	Fabrication Lists.
+
+	Used when the user adds or removes rows in filtered_fabrication_list manually,
+	so the recompute is driven by whatever is currently in the table rather than by
+	re-querying the Sales Order.
+	"""
+	if isinstance(fabrication_names, str):
+		fabrication_names = frappe.parse_json(fabrication_names)
+
+	# De-duplicate while preserving order so a list added twice is not double-counted.
+	seen = set()
+	fab_names = []
+	for name in (fabrication_names or []):
+		if name and name not in seen:
+			seen.add(name)
+			fab_names.append(name)
+
+	items, parents = _aggregate(fab_names)
+	if sales_order:
+		_apply_so_rates(parents, sales_order)
+
+	net_total = sum(flt(p["amount"]) for p in parents)
+	tax_amount, grand_total = _compute_taxes(net_total, taxes_and_charges)
+
+	return {
+		"fabrication_filter_items": items,
+		"parent_item": parents,
+		"net_total": net_total,
+		"tax_amount": tax_amount,
+		"grand_total": grand_total,
+	}
+
+
+@frappe.whitelist()
 def load_from_sales_order(sales_order, taxes_and_charges=None):
 	"""Live preview for the form: given a Sales Order, return the matching
 	Fabrication Lists plus the aggregated items, parent items and totals.
