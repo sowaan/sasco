@@ -24,22 +24,23 @@ def before_save(doc, method):
         if not row.price_list:
             row.price_list = doc.selling_price_list
 
-        ctx = {
-            "price_list": row.price_list,   # use the row's value (whether set already or just updated)
-            "customer": doc.customer,
-            "uom": row.fg_item_uom,
-            "transaction_date": doc.transaction_date,
-            "qty": 1,
-            "stock_uom": row.fg_item_uom,
-            "conversion_factor": 1
-        }
+        if doc.custom_allow_items_price_list:
+            ctx = {
+                "price_list": row.price_list,   # use the row's value (whether set already or just updated)
+                "customer": doc.custom_customer,
+                "uom": row.fg_item_uom,
+                "transaction_date": doc.transaction_date,
+                "qty": 1,
+                "stock_uom": row.fg_item_uom,
+                "conversion_factor": 1
+            }
 
-        price_data = get_price_list_rate_for(ctx, row.parent_item)
+            price_data = get_price_list_rate_for(ctx, row.parent_item)
 
-        if price_data:
-            row.rate = flt(price_data)
-        else:
-            row.rate = 0
+            if price_data:
+                row.rate = flt(price_data)
+            else:
+                row.rate = 0
 
         row.amount = flt(row.quantity) * flt(row.rate)
 
