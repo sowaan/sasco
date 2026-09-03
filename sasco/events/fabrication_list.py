@@ -27,7 +27,8 @@ def create_masters_from_fabrication(doc):
             "item_group": row.fl_item_group,
             "stock_uom": row.fl_item_uom,
             "brand": row.fl_item_brand,
-            "custom_company": doc.company
+            "custom_company": doc.company,
+            "is_stock_item": 1
         })
 
 def before_submit(doc, method):
