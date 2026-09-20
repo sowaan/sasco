@@ -304,6 +304,13 @@ frappe.ui.form.on('Manufacture Order', {
                                     frappe.model.set_value(row.doctype, row.name, 'item_name', item.item_name);
                                     frappe.model.set_value(row.doctype, row.name, 'qty', item.qty);
                                     frappe.model.set_value(row.doctype, row.name, 'uom', item.uom);
+
+                                    // Explicitly set stock_uom and description immediately so mandatory validation never fails
+                                    frappe.model.set_value(row.doctype, row.name, 'stock_uom', item.stock_uom || item.uom);
+                                    frappe.model.set_value(row.doctype, row.name, 'conversion_factor', 1);
+                                    frappe.model.set_value(row.doctype, row.name, 'transfer_qty', item.qty);
+                                    frappe.model.set_value(row.doctype, row.name, 'description', item.description || item.item_name);
+
                                     frappe.model.set_value(row.doctype, row.name, 'basic_rate', item.per_unit_cost);
                                     frappe.model.set_value(row.doctype, row.name, 'valuation_rate', item.per_unit_cost);
                                     frappe.model.set_value(row.doctype, row.name, 'manufacture_order', frm.doc.name);
@@ -314,8 +321,12 @@ frappe.ui.form.on('Manufacture Order', {
 
 
                                     if (row.item_code) {
+                            
+                                        // 1. Capture the exact row's doctype and name in block-scoped constants
+                                        const target_doctype = row.doctype;
+                                        const target_name = row.name;
 
-                                        var ars = {
+                                        const ars = {
                                             item_code: row.item_code,
                                             item_name: row.item_name,
                                             warehouse: cstr(row.s_warehouse) || cstr(row.t_warehouse),
@@ -340,12 +351,12 @@ frappe.ui.form.on('Manufacture Order', {
                                             args: ars,
                                             callback: function (r) {
                                                 if (r.message) {
-                                                    var d = locals[cdt][cdn];
+                                                    const d = locals[target_doctype][target_name];
                                                     $.each(r.message, function (k, v) {
                                                         if (v) {
                                                             // set_value trigger barcode function and barcode set qty to 1 in stock_controller.js, to avoid this set value manually instead of set value.
                                                             if (k != "barcode") {
-                                                                frappe.model.set_value(cdt, cdn, k, v); // qty and it's subsequent fields weren't triggered
+                                                                frappe.model.set_value(target_doctype, target_name, k, v); // qty and it's subsequent fields weren't triggered
                                                             } else {
                                                                 d.barcode = v;
                                                             }
