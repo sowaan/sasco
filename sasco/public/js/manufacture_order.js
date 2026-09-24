@@ -280,8 +280,8 @@ frappe.ui.form.on('Manufacture Order', {
 
                         if (selected_items.length > 0) {
 
-                            frappe.new_doc("Stock Entry", { "stock_entry_type": "Manufacture" }, doc => {
-
+                            frappe.new_doc("Stock Entry", { "stock_entry_type": "Material Receipt" }, doc => {
+                                
                                 doc.company = frm.doc.company;
                                 doc.posting_date = frappe.datetime.get_today();
                                 doc.custom_manufacture_order = frm.doc.name;
