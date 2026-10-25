@@ -11,8 +11,48 @@ from sasco.sasco.services.master_creator import (
 from erpnext.stock.get_item_details import get_item_details
 
 DUMMY_ITEM_CODE = "Dummy Item"
+AREA_UOM = "SQM"
+WEIGHT_UOM = "KG"
+
+def get_material_uom_map(doc):
+    """
+    Map fg_batch_sr -> {SQM: area / coil_qty, KG: weight / coil_qty}
+    from the Material List table. Rows with zero coil qty are skipped.
+    """
+
+    uom_map = {}
+
+    for row in doc.material_list or []:
+        coil_qty = flt(row.coil_item_qty)
+        if not row.fg_batch_sr or not coil_qty:
+            continue
+
+        uom_map[row.fg_batch_sr] = {
+            AREA_UOM: flt(row.sum_of_duct_area_with_seam) / coil_qty,
+            WEIGHT_UOM: flt(row.sum_of_duct_weight) / coil_qty,
+        }
+
+    return uom_map
+
+def get_item_uoms(stock_uom, conversions):
+    uoms = []
+
+    for uom, factor in (conversions or {}).items():
+        # Stock UOM row is added by ERPNext with factor 1
+        if not factor or uom == stock_uom:
+            continue
+
+        uoms.append({"uom": uom, "conversion_factor": factor})
+
+    return uoms
 
 def create_masters_from_fabrication(doc):
+
+    uom_map = get_material_uom_map(doc)
+
+    if uom_map:
+        ensure_uom(AREA_UOM)
+        ensure_uom(WEIGHT_UOM)
 
     for row in doc.fabrication_table or []:
 
@@ -20,7 +60,7 @@ def create_masters_from_fabrication(doc):
         ensure_brand(row.fl_item_brand, row.fl_item_group)
         ensure_uom(row.fl_item_uom)
 
-        ensure_item({
+        item = {
             "doctype": "Item",
             "item_code": row.fg_batch_sr,
             "item_name": row.fl_item_name,
@@ -28,8 +68,14 @@ def create_masters_from_fabrication(doc):
             "stock_uom": row.fl_item_uom,
             "brand": row.fl_item_brand,
             "custom_company": doc.company,
-            "is_stock_item": 1
-        })
+            "is_stock_item": 1,
+        }
+
+        # SQM / KG conversions only for maintain stock items
+        if item["is_stock_item"]:
+            item["uoms"] = get_item_uoms(row.fl_item_uom, uom_map.get(row.fg_batch_sr))
+
+        ensure_item(item)
 
 def before_submit(doc, method):
     create_masters_from_fabrication(doc)
