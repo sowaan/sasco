@@ -14,22 +14,24 @@ DUMMY_ITEM_CODE = "Dummy Item"
 AREA_UOM = "SQM"
 WEIGHT_UOM = "KG"
 
-def get_material_uom_map(doc):
+def get_fabrication_uom_map(doc):
     """
-    Map fg_batch_sr -> {SQM: area / coil_qty, KG: weight / coil_qty}
-    from the Material List table. Rows with zero coil qty are skipped.
+    Map fg_batch_sr -> {SQM: area / pcs, KG: weight / pcs}
+    using Fabrication Table.
     """
 
     uom_map = {}
 
-    for row in doc.material_list or []:
-        coil_qty = flt(row.coil_item_qty)
-        if not row.fg_batch_sr or not coil_qty:
+    for row in doc.fabrication_table or []:
+        item_code = row.fg_batch_sr
+        pcs = flt(row.spl_qty_in_pcs)
+
+        if not item_code or not pcs:
             continue
 
-        uom_map[row.fg_batch_sr] = {
-            AREA_UOM: flt(row.sum_of_duct_area_with_seam) / coil_qty,
-            WEIGHT_UOM: flt(row.sum_of_duct_weight) / coil_qty,
+        uom_map[item_code] = {
+            AREA_UOM: flt(row.spl_area_sqm) / pcs,
+            WEIGHT_UOM: flt(row.spl_weight_kg) / pcs,
         }
 
     return uom_map
@@ -48,7 +50,7 @@ def get_item_uoms(stock_uom, conversions):
 
 def create_masters_from_fabrication(doc):
 
-    uom_map = get_material_uom_map(doc)
+    uom_map = get_fabrication_uom_map(doc)
 
     if uom_map:
         ensure_uom(AREA_UOM)
@@ -71,9 +73,10 @@ def create_masters_from_fabrication(doc):
             "is_stock_item": 1,
         }
 
-        # SQM / KG conversions only for maintain stock items
-        if item["is_stock_item"]:
-            item["uoms"] = get_item_uoms(row.fl_item_uom, uom_map.get(row.fg_batch_sr))
+        item["uoms"] = get_item_uoms(
+            row.fl_item_uom,
+            uom_map.get(row.fg_batch_sr)
+        )
 
         ensure_item(item)
 
