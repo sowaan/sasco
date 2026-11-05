@@ -179,6 +179,11 @@ doc_events = {
     "Fabrication List":{
         "before_submit": "sasco.events.fabrication_list.before_submit",
         "before_save":"sasco.events.fabrication_list.before_save",
+    },
+    "Manufacture Order": {
+        "on_submit": "sasco.events.manufacture_order.on_submit",
+        "before_cancel": "sasco.events.manufacture_order.before_cancel",
+        "on_update_after_submit": "sasco.events.manufacture_order.on_update_after_submit",
     }
 }
 
