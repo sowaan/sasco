@@ -229,9 +229,14 @@ def add_items_to_sales_order(fabrication_doc, sales_order):
 
         qty = flt(item.get("qty"))
 
-        # 🔵 Check if item already exists → update qty
+        # 🔵 Same item from the same Fabrication List → update qty.
+        # Lines are kept per Fabrication List so Delivery Notes can be made per list.
         existing_row = next(
-            (row for row in sales_order.items if row.item_code == item_code),
+            (
+                row for row in sales_order.items
+                if row.item_code == item_code
+                and row.get("custom_fabrication_list") == fabrication_doc.name
+            ),
             None
         )
 
@@ -278,6 +283,7 @@ def add_items_to_sales_order(fabrication_doc, sales_order):
         row.cost_center = sales_order.get("cost_center")
 
         # 🔵 Custom Fields (if coming from fabrication)
+        row.custom_fabrication_list = fabrication_doc.name
         row.custom_parent_item_1 = item.get("parent_item")
         row.custom_s1 = item.get("custom_s1")
         row.custom_s2 = item.get("custom_s2")
