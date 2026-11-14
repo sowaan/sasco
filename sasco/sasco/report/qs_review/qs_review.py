@@ -50,11 +50,7 @@ def get_data(filters):
             fpi.rate,
             fpi.amount       AS sod_amount,
             i.stock_uom      AS default_uom,
-            CASE
-                WHEN fpi.fg_item_uom = 'SQM' THEN fpi.spl_area_sqm
-                WHEN fpi.fg_item_uom = 'KG'  THEN fpi.total_kg
-                ELSE fpi.quantity
-            END AS sod_qty
+            fpi.quantity     AS sod_qty
         FROM `tabFabrication Parent Item` fpi
         INNER JOIN `tabItem` i ON i.name = fpi.parent_item
         WHERE fpi.parent = %s

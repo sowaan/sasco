@@ -17,7 +17,7 @@ fixtures = [
         "doctype": "Property Setter",
         "filters": [
             ["doc_type", "=", "Sales Order"],
-            ["property", "=", "allow_bulk_edit"]
+            ["property", "in", ["allow_bulk_edit", "allow_on_submit"]]
         ]
     },
     {
@@ -59,6 +59,7 @@ app_include_js = "/assets/sasco/js/manufacture_order.js"
 # doctype_js = {"doctype" : "public/js/doctype.js"}
 
 doctype_js = {
+    "Item": "public/js/item.js",
     "Quotation" : "public/js/quotation.js",
     "Sales Order" : "public/js/sales_order.js",
     # "Fabrication List" : "public/js/fabrication_list.js",
@@ -170,6 +171,9 @@ override_doctype_class = {
 # }
 
 doc_events = {
+    "Item": {
+        "before_save": "sasco.events.item.set_default_uom_first"
+    },
     "Quotation": {
         "before_save": "sasco.events.quotation.before_save"
 	},
